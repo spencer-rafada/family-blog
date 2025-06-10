@@ -1,6 +1,6 @@
 'use client'
 
-import useSWR, { mutate } from 'swr'
+import useSWR from 'swr'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -9,9 +9,6 @@ import PostSkeleton from './PostSkeleton'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys, MILESTONE_LABELS } from '@/lib/constants'
 import type { Post } from '@/types'
-
-// Export function to trigger revalidation after creating posts
-export const revalidatePosts = () => mutate(SWRKeys.POSTS)
 
 export default function PostFeed() {
   const { data: posts, error, isLoading } = useSWR<Post[]>(SWRKeys.POSTS, fetcher, {
