@@ -2,6 +2,7 @@
 export enum SWRKeys {
   POSTS = '/api/posts',
   PROFILE = '/api/profile',
+  COMMENTS = '/api/comments',
 }
 
 // Milestone Types

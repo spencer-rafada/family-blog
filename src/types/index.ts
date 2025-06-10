@@ -19,6 +19,16 @@ export interface Profile {
   updated_at: string
 }
 
+export interface Comment {
+  id: string
+  post_id: string
+  author_id: string
+  content: string
+  created_at: string
+  updated_at: string
+  author: Profile
+}
+
 export interface Post {
   id: string
   title: string | null
@@ -29,4 +39,5 @@ export interface Post {
   author_id: string
   author: Profile
   post_images: PostImage[]
+  comments?: Comment[]
 }
