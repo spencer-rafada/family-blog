@@ -4,11 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types'
 
 export async function getUserProfile(): Promise<Profile | null> {
-  const supabase = createClient()
-  
+  const supabase = await createClient()
+
   // Get current user
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
   if (userError || !user) {
     return null
   }

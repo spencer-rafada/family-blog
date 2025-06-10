@@ -29,6 +29,13 @@ export interface Comment {
   author: Profile
 }
 
+export interface PostLike {
+  id: string
+  post_id: string
+  user_id: string
+  created_at: string
+}
+
 export interface Post {
   id: string
   title: string | null
@@ -40,4 +47,7 @@ export interface Post {
   author: Profile
   post_images: PostImage[]
   comments?: Comment[]
+  likes?: PostLike[]
+  like_count?: number
+  is_liked?: boolean
 }
