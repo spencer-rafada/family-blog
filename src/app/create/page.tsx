@@ -122,10 +122,10 @@ export default function CreatePost() {
       }
 
       // Trigger SWR revalidation to show new post immediately
-      const { revalidatePosts } = await import('@/components/PostFeed')
+      const { revalidatePosts } = await import('@/lib/swr')
       revalidatePosts()
       
-      router.push('/')
+      router.push('/home')
     } catch (err: any) {
       setError(err.message || 'Failed to create post')
     } finally {
@@ -270,7 +270,7 @@ export default function CreatePost() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/home')}
                 disabled={loading}
               >
                 Cancel
