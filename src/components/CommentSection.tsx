@@ -1,20 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MessageCircle, Send } from 'lucide-react'
-import type { Comment, Post } from '@/types'
+import CommentItem from './CommentItem'
+import type { Comment, Post, Profile } from '@/types'
 
 interface CommentSectionProps {
   post: Post
   comments: Comment[]
+  currentUser?: Profile | null
   onAddComment: (content: string) => Promise<void>
 }
 
-export default function CommentSection({ post, comments, onAddComment }: CommentSectionProps) {
+export default function CommentSection({ post, comments, currentUser, onAddComment }: CommentSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -82,29 +82,12 @@ export default function CommentSection({ post, comments, onAddComment }: Comment
           {comments.length > 0 && (
             <div className="space-y-3">
               {comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-3">
-                  <Avatar className="w-6 h-6 flex-shrink-0">
-                    <AvatarImage src={comment.author.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs">
-                      {comment.author.full_name?.charAt(0) || comment.author.email.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="bg-gray-50 rounded-lg px-3 py-2">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm font-medium text-gray-900">
-                          {comment.author.full_name || comment.author.email}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {comment.content}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  currentUser={currentUser}
+                  postId={post.id}
+                />
               ))}
             </div>
           )}

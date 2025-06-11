@@ -5,7 +5,7 @@ import CommentSection from './CommentSection'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys } from '@/lib/constants'
 import { revalidateComments } from '@/lib/swr'
-import type { Comment } from '@/types'
+import type { Comment, Profile } from '@/types'
 
 interface PostCommentsProps {
   postId: string
@@ -21,6 +21,12 @@ export default function PostComments({ postId }: PostCommentsProps) {
       refreshInterval: 30000, // Refresh every 30 seconds
     }
   )
+
+  // Get current user profile for edit/delete permissions
+  const { data: currentUser } = useSWR<Profile>(SWRKeys.PROFILE, fetcher, {
+    revalidateOnFocus: false,
+    errorRetryCount: 1,
+  })
 
   const handleAddComment = async (content: string) => {
     try {
@@ -56,6 +62,7 @@ export default function PostComments({ postId }: PostCommentsProps) {
     <CommentSection
       post={{ id: postId } as any} // We only need the ID for the comment section
       comments={comments}
+      currentUser={currentUser}
       onAddComment={handleAddComment}
     />
   )
