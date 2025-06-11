@@ -4,15 +4,17 @@ import { createClient } from '@/lib/supabase/server'
 import type { Post } from '@/types'
 
 export async function getPosts(): Promise<Post[]> {
-  const supabase = createClient()
-  
+  const supabase = await createClient()
+
   const { data, error } = await supabase
     .from('posts')
-    .select(`
+    .select(
+      `
       *,
       author:profiles(*),
       post_images(*)
-    `)
+    `
+    )
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -20,8 +22,10 @@ export async function getPosts(): Promise<Post[]> {
   }
 
   // Sort images by display_order
-  return data.map(post => ({
+  return data.map((post) => ({
     ...post,
-    post_images: post.post_images.sort((a: any, b: any) => a.display_order - b.display_order)
+    post_images: post.post_images.sort(
+      (a: any, b: any) => a.display_order - b.display_order
+    ),
   }))
 }

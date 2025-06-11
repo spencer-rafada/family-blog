@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formatDistanceToNow } from 'date-fns'
 import PostSkeleton from './PostSkeleton'
+import PostComments from './PostComments'
+import LikeButton from './LikeButton'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys, MILESTONE_LABELS } from '@/lib/constants'
 import type { Post } from '@/types'
@@ -103,6 +105,14 @@ export default function PostFeed() {
                 ))}
               </div>
             )}
+            
+            {/* Like Button */}
+            <div className="flex items-center pt-2 border-t">
+              <LikeButton postId={post.id} />
+            </div>
+            
+            {/* Comments Section */}
+            <PostComments postId={post.id} />
           </CardContent>
         </Card>
       ))}
