@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { uploadImage } from '@/lib/supabase/storage'
+import { useAlbums } from '@/lib/hooks/useAlbums'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { X, Upload } from 'lucide-react'
+import { X, Upload, Users } from 'lucide-react'
 
 interface ImageUpload {
   file: File
@@ -23,11 +24,13 @@ export default function CreatePost() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [milestoneType, setMilestoneType] = useState('')
+  const [selectedAlbumId, setSelectedAlbumId] = useState('')
   const [images, setImages] = useState<ImageUpload[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
+  const { albums, isLoading: albumsLoading } = useAlbums()
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -59,50 +62,31 @@ export default function CreatePost() {
     setError('')
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setError('You must be logged in to create a post')
+      if (!selectedAlbumId) {
+        setError('Please select an album for this post')
         return
       }
 
-      // Ensure profile exists (fallback in case trigger didn't work)
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single()
+      // Create post using the API
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title || undefined,
+          content,
+          milestone_type: milestoneType || undefined,
+          album_id: selectedAlbumId,
+        }),
+      })
 
-      if (!existingProfile) {
-        // Create profile if it doesn't exist
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            email: user.email!,
-            full_name: user.user_metadata?.full_name || '',
-          })
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError)
-          setError('Failed to create user profile. Please try again.')
-          return
-        }
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create post')
       }
 
-      // Create post
-      const { data: post, error: postError } = await supabase
-        .from('posts')
-        .insert({
-          author_id: user.id,
-          title: title || null,
-          content,
-          milestone_type: milestoneType || null,
-        })
-        .select()
-        .single()
-
-      if (postError) throw postError
+      const post = await response.json()
 
       // Upload images and create post_images records
       for (let i = 0; i < images.length; i++) {
@@ -161,6 +145,33 @@ export default function CreatePost() {
                 rows={4}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="album">Share to Album</Label>
+              <Select value={selectedAlbumId} onValueChange={setSelectedAlbumId} required>
+                <SelectTrigger>
+                  <SelectValue placeholder={albumsLoading ? "Loading albums..." : "Select an album"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {albums.map((album) => (
+                    <SelectItem key={album.id} value={album.id}>
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-4 h-4" />
+                        <span>{album.name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {album.member_count} {album.member_count === 1 ? 'member' : 'members'}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedAlbumId && (
+                <div className="text-sm text-gray-500">
+                  Your post will be shared with all members of this album
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -275,7 +286,7 @@ export default function CreatePost() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading || (!content.trim() && images.length === 0)}>
+              <Button type="submit" disabled={loading || (!content.trim() && images.length === 0) || !selectedAlbumId}>
                 {loading ? 'Sharing...' : 'Share Memory'}
               </Button>
             </div>
