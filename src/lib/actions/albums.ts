@@ -106,7 +106,7 @@ export async function createAlbum(data: { name: string; description?: string }):
 }
 
 export async function updateAlbum(id: string, data: { name: string; description?: string }): Promise<Album> {
-  const user = await requireAuth()
+  await requireAuth()
   const supabase = await createClient()
 
   if (!data.name?.trim()) {
@@ -132,7 +132,7 @@ export async function updateAlbum(id: string, data: { name: string; description?
 }
 
 export async function deleteAlbum(id: string): Promise<void> {
-  const user = await requireAuth()
+  await requireAuth()
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -165,7 +165,7 @@ export async function getAlbumMembers(albumId: string): Promise<AlbumMember[]> {
 }
 
 export async function addAlbumMember(albumId: string, userId: string, role: AlbumRole): Promise<AlbumMember> {
-  const user = await requireAuth()
+  await requireAuth()
   const supabase = await createClient()
 
   const { data: member, error } = await supabase
@@ -186,7 +186,7 @@ export async function addAlbumMember(albumId: string, userId: string, role: Albu
 }
 
 export async function updateAlbumMemberRole(memberId: string, role: AlbumRole): Promise<AlbumMember> {
-  const user = await requireAuth()
+  await requireAuth()
   const supabase = await createClient()
 
   const { data: member, error } = await supabase
@@ -204,7 +204,7 @@ export async function updateAlbumMemberRole(memberId: string, role: AlbumRole): 
 }
 
 export async function removeAlbumMember(memberId: string): Promise<void> {
-  const user = await requireAuth()
+  await requireAuth()
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -326,7 +326,7 @@ export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
 }
 
 export async function cancelAlbumInvite(inviteId: string): Promise<void> {
-  const user = await requireAuth()
+  await requireAuth()
   const supabase = await createClient()
 
   const { error } = await supabase
