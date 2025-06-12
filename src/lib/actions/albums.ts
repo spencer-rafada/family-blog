@@ -25,7 +25,8 @@ export async function getAlbums(): Promise<Album[]> {
         role,
         joined_at,
         user:profiles(id, full_name, avatar_url)
-      )
+      ),
+      posts(id)
     `
     )
     .order('created_at', { ascending: false })
@@ -37,7 +38,7 @@ export async function getAlbums(): Promise<Album[]> {
   return albums.map((album) => ({
     ...album,
     member_count: album.members?.length || 0,
-    post_count: 0, // TODO: Add post count from posts table
+    post_count: album.posts?.length || 0,
   }))
 }
 
@@ -56,7 +57,8 @@ export async function getPublicAlbums(): Promise<Album[]> {
         role,
         joined_at,
         user:profiles(id, full_name, avatar_url)
-      )
+      ),
+      posts(id)
     `
     )
     .eq('privacy_level', AlbumPrivacyLevel.PUBLIC)
@@ -69,7 +71,7 @@ export async function getPublicAlbums(): Promise<Album[]> {
   return albums.map((album) => ({
     ...album,
     member_count: album.members?.length || 0,
-    post_count: 0, // TODO: Add post count from posts table
+    post_count: album.posts?.length || 0,
   }))
 }
 

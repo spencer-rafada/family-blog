@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Globe, Users, Calendar, Search } from 'lucide-react'
+import { Globe, Users, Calendar, Search, AlertCircle, Loader2 } from 'lucide-react'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys } from '@/lib/constants'
 
 export default function AlbumDiscovery() {
   const [searchTerm, setSearchTerm] = useState('')
   const [joiningAlbum, setJoiningAlbum] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   const { data: albums = [], error, isLoading, mutate } = useSWR<Album[]>(
     SWRKeys.PUBLIC_ALBUMS,
@@ -22,6 +23,8 @@ export default function AlbumDiscovery() {
 
   const handleJoinRequest = async (albumId: string) => {
     setJoiningAlbum(albumId)
+    setFeedback(null)
+    
     try {
       const response = await fetch(`/api/albums/${albumId}/join`, {
         method: 'POST',
@@ -32,14 +35,25 @@ export default function AlbumDiscovery() {
       })
 
       if (response.ok) {
-        alert('Join request sent! The album owner will review your request.')
+        setFeedback({
+          type: 'success',
+          message: 'Join request sent! The album owner will review your request.'
+        })
+        // Auto-hide success message after 5 seconds
+        setTimeout(() => setFeedback(null), 5000)
       } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to send join request')
+        const errorData = await response.json()
+        setFeedback({
+          type: 'error',
+          message: errorData.error || 'Failed to send join request'
+        })
       }
     } catch (error) {
       console.error('Error sending join request:', error)
-      alert('Failed to send join request')
+      setFeedback({
+        type: 'error',
+        message: 'Failed to send join request. Please try again.'
+      })
     } finally {
       setJoiningAlbum(null)
     }
@@ -53,8 +67,27 @@ export default function AlbumDiscovery() {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-red-600">
-          Failed to load public albums. Please try again later.
+        <div className="max-w-md mx-auto">
+          <Card className="border-red-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+                <div>
+                  <h3 className="font-medium">Failed to load albums</h3>
+                  <p className="text-sm text-red-500 mt-1">
+                    Unable to fetch public albums. Please check your connection and try again.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full mt-4" 
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -63,7 +96,20 @@ export default function AlbumDiscovery() {
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading public albums...</div>
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Discover Family Albums</h1>
+            <p className="text-gray-600 mb-6">
+              Browse public family albums and request to join
+            </p>
+          </div>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">Loading public albums...</p>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -76,6 +122,32 @@ export default function AlbumDiscovery() {
           <p className="text-gray-600 mb-6">
             Browse public family albums and request to join
           </p>
+          
+          {/* Feedback Message */}
+          {feedback && (
+            <div className={`mb-6 p-4 rounded-lg border ${
+              feedback.type === 'success' 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center gap-2">
+                {feedback.type === 'success' ? (
+                  <div className="w-4 h-4 rounded-full bg-green-200 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-green-600 rounded-full" />
+                  </div>
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                <span className="text-sm font-medium">{feedback.message}</span>
+                <button
+                  onClick={() => setFeedback(null)}
+                  className="ml-auto text-current hover:opacity-70"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
           
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -147,7 +219,14 @@ export default function AlbumDiscovery() {
                       onClick={() => handleJoinRequest(album.id)}
                       disabled={joiningAlbum === album.id}
                     >
-                      {joiningAlbum === album.id ? 'Requesting...' : 'Request to Join'}
+                      {joiningAlbum === album.id ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                          Requesting...
+                        </>
+                      ) : (
+                        'Request to Join'
+                      )}
                     </Button>
                   </div>
                 </CardContent>
