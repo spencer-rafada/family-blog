@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, User, LogOut, Users } from 'lucide-react'
+import { Plus, User, LogOut, Users, Globe } from 'lucide-react'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys } from '@/lib/constants'
 import { revalidateProfile } from '@/lib/swr'
@@ -68,6 +68,14 @@ export default function Navbar() {
                   <Link href="/albums">
                     <Users className="w-4 h-4 mr-2" />
                     Albums
+                  </Link>
+                </Button>
+
+                {/* Discover Albums Link */}
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/discover">
+                    <Globe className="w-4 h-4 mr-2" />
+                    Discover
                   </Link>
                 </Button>
 

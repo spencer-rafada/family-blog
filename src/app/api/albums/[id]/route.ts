@@ -3,15 +3,13 @@ import { getAlbum, updateAlbum, deleteAlbum } from '@/lib/actions/albums'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
-    const album = await getAlbum(params.id)
+    const album = await getAlbum(id)
     if (!album) {
-      return NextResponse.json(
-        { error: 'Album not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Album not found' }, { status: 404 })
     }
     return NextResponse.json(album)
   } catch (error: any) {
@@ -25,11 +23,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const data = await request.json()
-    const album = await updateAlbum(params.id, data)
+    const album = await updateAlbum(id, data)
     return NextResponse.json(album)
   } catch (error: any) {
     console.error('Error updating album:', error)
@@ -42,10 +41,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
-    await deleteAlbum(params.id)
+    await deleteAlbum(id)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Error deleting album:', error)

@@ -5,19 +5,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Users, Globe, Lock } from 'lucide-react'
+import { Users, Globe, Lock } from 'lucide-react'
 import { revalidateAlbums } from '@/lib/swr'
 import { AlbumPrivacyLevel } from '@/types'
 
-interface CreateAlbumFormProps {
+interface CreateAlbumCardProps {
   onSuccess?: (albumId: string) => void
-  trigger?: React.ReactNode
 }
 
-export default function CreateAlbumForm({ onSuccess, trigger }: CreateAlbumFormProps) {
-  const [open, setOpen] = useState(false)
+export default function CreateAlbumCard({ onSuccess }: CreateAlbumCardProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [privacyLevel, setPrivacyLevel] = useState<AlbumPrivacyLevel>(AlbumPrivacyLevel.PRIVATE)
@@ -65,7 +63,6 @@ export default function CreateAlbumForm({ onSuccess, trigger }: CreateAlbumFormP
       revalidateAlbums()
       
       resetForm()
-      setOpen(false)
       
       if (onSuccess) {
         onSuccess(album.id)
@@ -77,26 +74,15 @@ export default function CreateAlbumForm({ onSuccess, trigger }: CreateAlbumFormP
     }
   }
 
-  const defaultTrigger = (
-    <Button>
-      <Plus className="w-4 h-4 mr-2" />
-      Create Album
-    </Button>
-  )
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || defaultTrigger}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Create New Album
-          </DialogTitle>
-        </DialogHeader>
-        
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="w-5 h-5" />
+          Create New Album
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="album-name">Album Name</Label>
@@ -157,29 +143,15 @@ export default function CreateAlbumForm({ onSuccess, trigger }: CreateAlbumFormP
             </div>
           )}
 
-          <div className="flex space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                resetForm()
-                setOpen(false)
-              }}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || !name.trim()}
-              className="flex-1"
-            >
-              {loading ? 'Creating...' : 'Create Album'}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            disabled={loading || !name.trim()}
+            className="w-full"
+          >
+            {loading ? 'Creating...' : 'Create Album'}
+          </Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   )
 }

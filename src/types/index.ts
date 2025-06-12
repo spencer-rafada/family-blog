@@ -42,6 +42,7 @@ export interface Album {
   description: string | null
   created_by: string
   is_default: boolean
+  privacy_level: AlbumPrivacyLevel
   created_at: string
   updated_at: string
   creator?: Profile
@@ -77,6 +78,11 @@ export enum AlbumRole {
   ADMIN = 'admin',
   CONTRIBUTOR = 'contributor',
   VIEWER = 'viewer',
+}
+
+export enum AlbumPrivacyLevel {
+  PUBLIC = 'public',
+  PRIVATE = 'private',
 }
 
 export interface Post {

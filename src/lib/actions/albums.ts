@@ -2,14 +2,21 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth-utils'
-import { Album, AlbumMember, AlbumInvite, AlbumRole } from '@/types'
+import {
+  Album,
+  AlbumMember,
+  AlbumInvite,
+  AlbumRole,
+  AlbumPrivacyLevel,
+} from '@/types'
 
 export async function getAlbums(): Promise<Album[]> {
   const supabase = await createClient()
-  
+
   const { data: albums, error } = await supabase
     .from('albums')
-    .select(`
+    .select(
+      `
       *,
       creator:profiles!albums_created_by_fkey(id, full_name, avatar_url),
       members:album_members(
@@ -19,26 +26,28 @@ export async function getAlbums(): Promise<Album[]> {
         joined_at,
         user:profiles(id, full_name, avatar_url)
       )
-    `)
+    `
+    )
     .order('created_at', { ascending: false })
 
   if (error) {
     throw new Error(`Failed to fetch albums: ${error.message}`)
   }
 
-  return albums.map(album => ({
+  return albums.map((album) => ({
     ...album,
     member_count: album.members?.length || 0,
-    post_count: 0 // TODO: Add post count from posts table
+    post_count: 0, // TODO: Add post count from posts table
   }))
 }
 
-export async function getAlbum(id: string): Promise<Album | null> {
+export async function getPublicAlbums(): Promise<Album[]> {
   const supabase = await createClient()
-  
-  const { data: album, error } = await supabase
+
+  const { data: albums, error } = await supabase
     .from('albums')
-    .select(`
+    .select(
+      `
       *,
       creator:profiles!albums_created_by_fkey(id, full_name, avatar_url),
       members:album_members(
@@ -48,7 +57,40 @@ export async function getAlbum(id: string): Promise<Album | null> {
         joined_at,
         user:profiles(id, full_name, avatar_url)
       )
-    `)
+    `
+    )
+    .eq('privacy_level', AlbumPrivacyLevel.PUBLIC)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Failed to fetch public albums: ${error.message}`)
+  }
+
+  return albums.map((album) => ({
+    ...album,
+    member_count: album.members?.length || 0,
+    post_count: 0, // TODO: Add post count from posts table
+  }))
+}
+
+export async function getAlbum(id: string): Promise<Album | null> {
+  const supabase = await createClient()
+
+  const { data: album, error } = await supabase
+    .from('albums')
+    .select(
+      `
+      *,
+      creator:profiles!albums_created_by_fkey(id, full_name, avatar_url),
+      members:album_members(
+        id,
+        user_id,
+        role,
+        joined_at,
+        user:profiles(id, full_name, avatar_url)
+      )
+    `
+    )
     .eq('id', id)
     .single()
 
@@ -62,11 +104,15 @@ export async function getAlbum(id: string): Promise<Album | null> {
   return {
     ...album,
     member_count: album.members?.length || 0,
-    post_count: 0 // TODO: Add post count from posts table
+    post_count: 0, // TODO: Add post count from posts table
   }
 }
 
-export async function createAlbum(data: { name: string; description?: string }): Promise<Album> {
+export async function createAlbum(data: {
+  name: string
+  description?: string
+  privacy_level?: AlbumPrivacyLevel
+}): Promise<Album> {
   const user = await requireAuth()
   const supabase = await createClient()
 
@@ -74,14 +120,19 @@ export async function createAlbum(data: { name: string; description?: string }):
     throw new Error('Album name is required')
   }
 
+  const insertData = {
+    name: data.name.trim(),
+    description: data.description?.trim() || null,
+    created_by: user.id,
+    is_default: false,
+    privacy_level: data.privacy_level || AlbumPrivacyLevel.PRIVATE,
+  }
+
+  console.log('Inserting album data:', insertData)
+
   const { data: album, error } = await supabase
     .from('albums')
-    .insert({
-      name: data.name.trim(),
-      description: data.description?.trim() || null,
-      created_by: user.id,
-      is_default: false
-    })
+    .insert(insertData)
     .select()
     .single()
 
@@ -90,13 +141,11 @@ export async function createAlbum(data: { name: string; description?: string }):
   }
 
   // Add creator as admin
-  const { error: memberError } = await supabase
-    .from('album_members')
-    .insert({
-      album_id: album.id,
-      user_id: user.id,
-      role: AlbumRole.ADMIN
-    })
+  const { error: memberError } = await supabase.from('album_members').insert({
+    album_id: album.id,
+    user_id: user.id,
+    role: AlbumRole.ADMIN,
+  })
 
   if (memberError) {
     throw new Error(`Failed to set album permissions: ${memberError.message}`)
@@ -105,7 +154,14 @@ export async function createAlbum(data: { name: string; description?: string }):
   return album
 }
 
-export async function updateAlbum(id: string, data: { name: string; description?: string }): Promise<Album> {
+export async function updateAlbum(
+  id: string,
+  data: {
+    name: string
+    description?: string
+    privacy_level?: AlbumPrivacyLevel
+  }
+): Promise<Album> {
   await requireAuth()
   const supabase = await createClient()
 
@@ -113,13 +169,20 @@ export async function updateAlbum(id: string, data: { name: string; description?
     throw new Error('Album name is required')
   }
 
+  const updateData: any = {
+    name: data.name.trim(),
+    description: data.description?.trim() || null,
+    updated_at: new Date().toISOString(),
+  }
+
+  // Only update privacy_level if it's provided
+  if (data.privacy_level) {
+    updateData.privacy_level = data.privacy_level
+  }
+
   const { data: album, error } = await supabase
     .from('albums')
-    .update({
-      name: data.name.trim(),
-      description: data.description?.trim() || null,
-      updated_at: new Date().toISOString()
-    })
+    .update(updateData)
     .eq('id', id)
     .select()
     .single()
@@ -135,10 +198,7 @@ export async function deleteAlbum(id: string): Promise<void> {
   await requireAuth()
   const supabase = await createClient()
 
-  const { error } = await supabase
-    .from('albums')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabase.from('albums').delete().eq('id', id)
 
   if (error) {
     throw new Error(`Failed to delete album: ${error.message}`)
@@ -147,13 +207,15 @@ export async function deleteAlbum(id: string): Promise<void> {
 
 export async function getAlbumMembers(albumId: string): Promise<AlbumMember[]> {
   const supabase = await createClient()
-  
+
   const { data: members, error } = await supabase
     .from('album_members')
-    .select(`
+    .select(
+      `
       *,
       user:profiles(id, full_name, avatar_url, email)
-    `)
+    `
+    )
     .eq('album_id', albumId)
     .order('joined_at', { ascending: true })
 
@@ -164,7 +226,11 @@ export async function getAlbumMembers(albumId: string): Promise<AlbumMember[]> {
   return members
 }
 
-export async function addAlbumMember(albumId: string, userId: string, role: AlbumRole): Promise<AlbumMember> {
+export async function addAlbumMember(
+  albumId: string,
+  userId: string,
+  role: AlbumRole
+): Promise<AlbumMember> {
   await requireAuth()
   const supabase = await createClient()
 
@@ -173,7 +239,7 @@ export async function addAlbumMember(albumId: string, userId: string, role: Albu
     .insert({
       album_id: albumId,
       user_id: userId,
-      role: role
+      role: role,
     })
     .select()
     .single()
@@ -185,7 +251,10 @@ export async function addAlbumMember(albumId: string, userId: string, role: Albu
   return member
 }
 
-export async function updateAlbumMemberRole(memberId: string, role: AlbumRole): Promise<AlbumMember> {
+export async function updateAlbumMemberRole(
+  memberId: string,
+  role: AlbumRole
+): Promise<AlbumMember> {
   await requireAuth()
   const supabase = await createClient()
 
@@ -217,7 +286,11 @@ export async function removeAlbumMember(memberId: string): Promise<void> {
   }
 }
 
-export async function createAlbumInvite(albumId: string, email: string, role: AlbumRole): Promise<AlbumInvite> {
+export async function createAlbumInvite(
+  albumId: string,
+  email: string,
+  role: AlbumRole
+): Promise<AlbumInvite> {
   const user = await requireAuth()
   const supabase = await createClient()
 
@@ -234,7 +307,7 @@ export async function createAlbumInvite(albumId: string, email: string, role: Al
       invited_by: user.id,
       role: role,
       token: token,
-      expires_at: expiresAt.toISOString()
+      expires_at: expiresAt.toISOString(),
     })
     .select()
     .single()
@@ -244,7 +317,9 @@ export async function createAlbumInvite(albumId: string, email: string, role: Al
   }
 
   // TODO: Send invitation email
-  console.log(`Invite created for ${email} to album ${albumId} with token ${token}`)
+  console.log(
+    `Invite created for ${email} to album ${albumId} with token ${token}`
+  )
 
   return invite
 }
@@ -278,13 +353,11 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
   }
 
   // Add user as album member
-  const { error: memberError } = await supabase
-    .from('album_members')
-    .insert({
-      album_id: invite.album_id,
-      user_id: user.id,
-      role: invite.role
-    })
+  const { error: memberError } = await supabase.from('album_members').insert({
+    album_id: invite.album_id,
+    user_id: user.id,
+    role: invite.role,
+  })
 
   if (memberError) {
     throw new Error(`Failed to join album: ${memberError.message}`)
@@ -303,16 +376,77 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
   return invite.album_id
 }
 
+export async function requestToJoinAlbum(
+  albumId: string,
+  message?: string
+): Promise<AlbumInvite> {
+  const user = await requireAuth()
+  const supabase = await createClient()
+
+  // Get user's profile for email
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile) {
+    throw new Error('Profile not found')
+  }
+
+  // Check if album is public
+  const { data: album } = await supabase
+    .from('albums')
+    .select('privacy_level, created_by')
+    .eq('id', albumId)
+    .single()
+
+  if (!album || album.privacy_level !== AlbumPrivacyLevel.PUBLIC) {
+    throw new Error('Album not found or not public')
+  }
+
+  // Check if user is already a member
+  const { data: existingMember } = await supabase
+    .from('album_members')
+    .select('id')
+    .eq('album_id', albumId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (existingMember) {
+    throw new Error('You are already a member of this album')
+  }
+
+  // Check if there's already a pending invite
+  const { data: existingInvite } = await supabase
+    .from('album_invites')
+    .select('id')
+    .eq('album_id', albumId)
+    .eq('email', profile.email)
+    .is('used_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .single()
+
+  if (existingInvite) {
+    throw new Error('You already have a pending invitation to this album')
+  }
+
+  // Create join request (invite from the user to themselves)
+  return await createAlbumInvite(albumId, profile.email, AlbumRole.VIEWER)
+}
+
 export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
   const supabase = await createClient()
-  
+
   const { data: invites, error } = await supabase
     .from('album_invites')
-    .select(`
+    .select(
+      `
       *,
       album:albums(id, name),
       inviter:profiles!album_invites_invited_by_fkey(id, full_name, avatar_url)
-    `)
+    `
+    )
     .eq('album_id', albumId)
     .is('used_at', null)
     .gt('expires_at', new Date().toISOString())

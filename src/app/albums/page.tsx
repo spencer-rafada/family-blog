@@ -1,20 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AlbumList from '@/components/AlbumList'
 import CreateAlbumForm from '@/components/CreateAlbumForm'
 
 export default function AlbumsPage() {
   const router = useRouter()
-  const [showCreateForm, setShowCreateForm] = useState(false)
-
-  const handleCreateAlbum = () => {
-    setShowCreateForm(true)
-  }
 
   const handleAlbumCreated = (albumId: string) => {
-    setShowCreateForm(false)
     router.push(`/albums/${albumId}`)
   }
 
@@ -25,7 +18,7 @@ export default function AlbumsPage() {
         <CreateAlbumForm onSuccess={handleAlbumCreated} />
       </div>
       
-      <AlbumList onCreateAlbum={handleCreateAlbum} />
+      <AlbumList />
     </div>
   )
 }
