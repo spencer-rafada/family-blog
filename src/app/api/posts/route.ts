@@ -4,7 +4,7 @@ import { getPosts, createPost } from '@/lib/actions/posts'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const albumId = searchParams.get('albumId') || undefined
+    const albumId = searchParams.get('album') || searchParams.get('albumId') || undefined
     
     const posts = await getPosts(albumId)
     return NextResponse.json(posts)

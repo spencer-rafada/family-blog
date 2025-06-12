@@ -88,7 +88,8 @@ export async function getAlbum(id: string): Promise<Album | null> {
         role,
         joined_at,
         user:profiles(id, full_name, avatar_url)
-      )
+      ),
+      posts(id)
     `
     )
     .eq('id', id)
@@ -104,7 +105,7 @@ export async function getAlbum(id: string): Promise<Album | null> {
   return {
     ...album,
     member_count: album.members?.length || 0,
-    post_count: 0, // TODO: Add post count from posts table
+    post_count: album.posts?.length || 0,
   }
 }
 
@@ -128,27 +129,17 @@ export async function createAlbum(data: {
     privacy_level: data.privacy_level || AlbumPrivacyLevel.PRIVATE,
   }
 
-  console.log('Inserting album data:', insertData)
-
+  // Use RPC call to bypass RLS for album creation
   const { data: album, error } = await supabase
-    .from('albums')
-    .insert(insertData)
-    .select()
-    .single()
+    .rpc('create_album_with_member', {
+      album_name: insertData.name,
+      album_description: insertData.description,
+      album_privacy_level: insertData.privacy_level,
+      creator_id: user.id
+    })
 
   if (error) {
     throw new Error(`Failed to create album: ${error.message}`)
-  }
-
-  // Add creator as admin
-  const { error: memberError } = await supabase.from('album_members').insert({
-    album_id: album.id,
-    user_id: user.id,
-    role: AlbumRole.ADMIN,
-  })
-
-  if (memberError) {
-    throw new Error(`Failed to set album permissions: ${memberError.message}`)
   }
 
   return album

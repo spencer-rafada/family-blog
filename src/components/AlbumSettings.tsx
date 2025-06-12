@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { 
   ArrowLeft, 
   Settings, 
@@ -36,6 +37,8 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Form state
   const [name, setName] = useState('')
@@ -99,10 +102,8 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this album? This action cannot be undone.')) {
-      return
-    }
-
+    setDeleting(true)
+    
     try {
       const response = await fetch(`/api/albums/${albumId}`, {
         method: 'DELETE',
@@ -117,6 +118,7 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
       router.push('/albums')
     } catch (err: any) {
       setError(err.message || 'Failed to delete album')
+      setDeleting(false)
     }
   }
 
@@ -262,9 +264,36 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
               <p className="text-sm text-gray-600 mb-4">
                 Permanently delete this album and all its content. This action cannot be undone.
               </p>
-              <Button variant="destructive" onClick={handleDelete}>
-                Delete Album
-              </Button>
+              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive">
+                    Delete Album
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Album</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <p className="text-sm text-gray-600">
+                      Are you sure you want to delete <strong>{album.name}</strong>? This action cannot be undone and will permanently remove:
+                    </p>
+                    <ul className="mt-3 text-sm text-gray-600 list-disc list-inside space-y-1">
+                      <li>All photos and posts in this album</li>
+                      <li>All comments and likes</li>
+                      <li>All member permissions and invitations</li>
+                    </ul>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                      {deleting ? 'Deleting...' : 'Delete Album'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </div>

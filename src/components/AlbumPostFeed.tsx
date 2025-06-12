@@ -1,26 +1,35 @@
 'use client'
 
 import useSWR from 'swr'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import Link from 'next/link'
+import { Plus, ImageIcon } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import PostSkeleton from './PostSkeleton'
 import PostComments from './PostComments'
 import LikeButton from './LikeButton'
 import { fetcher } from '@/lib/fetcher'
-import { SWRKeys, MILESTONE_LABELS } from '@/lib/constants'
+import { MILESTONE_LABELS } from '@/lib/constants'
 import type { Post } from '@/types'
-import { Users } from 'lucide-react'
 
-export default function PostFeed() {
-  const { data: posts, error, isLoading } = useSWR<Post[]>(SWRKeys.POSTS, fetcher, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    refreshInterval: 30000, // Refresh every 30 seconds
-    dedupingInterval: 5000, // Dedupe requests within 5 seconds
-  })
+interface AlbumPostFeedProps {
+  albumId: string
+}
+
+export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
+  const { data: posts, error, isLoading } = useSWR<Post[]>(
+    `/api/posts?album=${albumId}`,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshInterval: 30000,
+      dedupingInterval: 5000,
+    }
+  )
 
   if (isLoading) {
     return (
@@ -46,10 +55,21 @@ export default function PostFeed() {
     return (
       <Card className="text-center py-12">
         <CardContent>
-          <p className="text-gray-600 mb-4">No memories shared yet!</p>
-          <p className="text-sm text-gray-500">
-            Be the first to share a special moment.
-          </p>
+          <div className="space-y-4">
+            <ImageIcon className="w-12 h-12 text-gray-400 mx-auto" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">No posts yet</h3>
+              <p className="text-gray-600 mt-1">
+                Be the first to share a memory in this album.
+              </p>
+            </div>
+            <Button asChild>
+              <Link href={`/create?album=${albumId}`}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Post
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     )
@@ -85,17 +105,6 @@ export default function PostFeed() {
             </div>
             {post.title && (
               <h3 className="font-semibold text-lg mt-2">{post.title}</h3>
-            )}
-            {post.album && (
-              <div className="mt-2">
-                <Link 
-                  href={`/albums/${post.album.id}`}
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                >
-                  <Users className="w-3 h-3" />
-                  {post.album.name}
-                </Link>
-              </div>
             )}
           </CardHeader>
           
