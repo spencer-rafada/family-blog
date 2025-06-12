@@ -4,6 +4,10 @@ export enum SWRKeys {
   PROFILE = '/api/profile',
   COMMENTS = '/api/comments',
   LIKES = '/api/likes',
+  ALBUMS = '/api/albums',
+  PUBLIC_ALBUMS = '/api/albums/public',
+  ALBUM_MEMBERS = '/api/albums/members',
+  ALBUM_INVITES = '/api/albums/invites',
 }
 
 // Milestone Types

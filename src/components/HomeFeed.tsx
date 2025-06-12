@@ -54,7 +54,7 @@ export default function HomeFeed() {
             Welcome back, {profile.full_name || 'Family'}!
           </h1>
           <p className="text-gray-600 mb-6">
-            Share and view the latest family memories
+            See the latest memories from all your albums and family posts
           </p>
           <Button asChild>
             <Link href="/create">

@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, User, LogOut } from 'lucide-react'
+import { Plus, User, LogOut, Users, Globe } from 'lucide-react'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys } from '@/lib/constants'
 import { revalidateProfile } from '@/lib/swr'
@@ -63,6 +63,22 @@ export default function Navbar() {
               <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
             ) : isAuthenticated ? (
               <>
+                {/* Albums Link */}
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/albums">
+                    <Users className="w-4 h-4 mr-2" />
+                    Albums
+                  </Link>
+                </Button>
+
+                {/* Discover Albums Link */}
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/discover">
+                    <Globe className="w-4 h-4 mr-2" />
+                    Discover
+                  </Link>
+                </Button>
+
                 {/* Create Post Button */}
                 <Button asChild size="sm">
                   <Link href="/create">
