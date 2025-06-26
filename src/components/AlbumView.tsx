@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import Link from 'next/link'
@@ -15,10 +16,14 @@ import {
   Users, 
   Plus,
   Calendar,
-  ImageIcon
+  ImageIcon,
+  UserPlus
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import AlbumPostFeed from '@/components/AlbumPostFeed'
+import { InviteModal } from '@/components/InviteModal'
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
+import { getCurrentUserRole, getUserPermissions } from '@/lib/permissions'
 import { fetcher } from '@/lib/fetcher'
 import { Album, AlbumPrivacyLevel } from '@/types'
 
@@ -28,11 +33,17 @@ interface AlbumViewProps {
 
 export default function AlbumView({ albumId }: AlbumViewProps) {
   const router = useRouter()
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  const { user } = useCurrentUser()
   
-  const { data: album, error, isLoading } = useSWR<Album>(
+  const { data: album, error, isLoading, mutate } = useSWR<Album>(
     `/api/albums/${albumId}`,
     fetcher
   )
+
+  // Get user permissions for this album
+  const userRole = user ? getCurrentUserRole(album, user.id) : null
+  const permissions = getUserPermissions(userRole)
 
   if (isLoading) {
     return (
@@ -128,9 +139,12 @@ export default function AlbumView({ albumId }: AlbumViewProps) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Album Members</span>
-              <Button size="sm" disabled>
-                Invite Members
-              </Button>
+              {permissions.canInviteMembers && (
+                <Button size="sm" onClick={() => setInviteModalOpen(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Invite Members
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -175,6 +189,15 @@ export default function AlbumView({ albumId }: AlbumViewProps) {
           <AlbumPostFeed albumId={albumId} />
         </div>
       </div>
+
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        albumId={albumId}
+        albumName={album?.name || 'Album'}
+        onInviteSuccess={() => mutate()}
+      />
     </div>
   )
 }

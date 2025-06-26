@@ -309,10 +309,56 @@ export async function createAlbumInvite(
     throw new Error(`Failed to create album invite: ${error.message}`)
   }
 
-  // TODO: Send invitation email
-  console.log(
-    `Invite created for ${email} to album ${albumId} with token ${token}`
-  )
+  // Get album and inviter details for email
+  const { data: album } = await supabase
+    .from('albums')
+    .select('name')
+    .eq('id', albumId)
+    .single()
+
+  const { data: inviter } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  // Send invitation email
+  try {
+    const { sendAlbumInviteEmail, getInviteAcceptUrl } = await import('@/lib/email')
+    
+    await sendAlbumInviteEmail({
+      to: invite.email,
+      inviterName: inviter?.full_name || 'Someone',
+      albumName: album?.name || 'Family Album',
+      role: invite.role,
+      inviteUrl: getInviteAcceptUrl(invite.token),
+    })
+  } catch (emailError) {
+    console.error('Failed to send invite email:', emailError)
+    // Don't fail the invite creation if email fails
+  }
+
+  return invite
+}
+
+export async function getInviteDetails(token: string) {
+  const supabase = await createClient()
+  
+  const { data: invite, error } = await supabase
+    .from('album_invites')
+    .select(`
+      *,
+      album:albums(name, description),
+      inviter:profiles!album_invites_invited_by_fkey(full_name)
+    `)
+    .eq('token', token)
+    .is('used_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .single()
+
+  if (error) {
+    throw new Error('Invalid or expired invite')
+  }
 
   return invite
 }
@@ -357,17 +403,23 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
   }
 
   // Mark invite as used
-  const { error: updateError } = await supabase
+  const { data: updatedInvite, error: updateError } = await supabase
     .from('album_invites')
     .update({ used_at: new Date().toISOString() })
     .eq('id', invite.id)
+    .select()
 
   if (updateError) {
     console.error('Error marking invite as used:', updateError)
+    console.error('Update error details:', updateError.message, updateError.details)
+    // Don't throw error for used_at update failure - the user is already added to album
+  } else {
+    console.log('Successfully marked invite as used:', updatedInvite)
   }
 
   return invite.album_id
 }
+
 
 export async function requestToJoinAlbum(
   albumId: string,
@@ -429,24 +481,22 @@ export async function requestToJoinAlbum(
 }
 
 export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
+  await requireAuth()
   const supabase = await createClient()
 
   const { data: invites, error } = await supabase
     .from('album_invites')
-    .select(
-      `
+    .select(`
       *,
-      album:albums(id, name),
-      inviter:profiles!album_invites_invited_by_fkey(id, full_name, avatar_url)
-    `
-    )
+      inviter:profiles!album_invites_invited_by_fkey(full_name)
+    `)
     .eq('album_id', albumId)
     .is('used_at', null)
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
 
   if (error) {
-    throw new Error(`Failed to fetch album invites: ${error.message}`)
+    throw new Error(`Failed to fetch invites: ${error.message}`)
   }
 
   return invites
@@ -462,6 +512,6 @@ export async function cancelAlbumInvite(inviteId: string): Promise<void> {
     .eq('id', inviteId)
 
   if (error) {
-    throw new Error(`Failed to cancel album invite: ${error.message}`)
+    throw new Error(`Failed to cancel invite: ${error.message}`)
   }
 }

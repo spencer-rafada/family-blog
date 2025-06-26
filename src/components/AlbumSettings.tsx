@@ -9,21 +9,20 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { 
   ArrowLeft, 
   Settings, 
   Globe, 
   Lock, 
-  Users, 
   UserPlus,
-  Crown,
-  Edit3,
-  Eye
+  Crown
 } from 'lucide-react'
+import { InviteModal } from '@/components/InviteModal'
+import { MemberManagement } from '@/components/MemberManagement'
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
+import { getCurrentUserRole, getUserPermissions } from '@/lib/permissions'
 import { fetcher } from '@/lib/fetcher'
 import { Album, AlbumPrivacyLevel } from '@/types'
 import { revalidateAlbums } from '@/lib/swr'
@@ -39,13 +38,15 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
   const [success, setSuccess] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  const { user } = useCurrentUser()
 
   // Form state
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [privacyLevel, setPrivacyLevel] = useState<AlbumPrivacyLevel>(AlbumPrivacyLevel.PRIVATE)
 
-  const { data: album, error: fetchError, isLoading } = useSWR<Album>(
+  const { data: album, error: fetchError, isLoading, mutate } = useSWR<Album>(
     `/api/albums/${albumId}`,
     fetcher,
     {
@@ -58,6 +59,10 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
       }
     }
   )
+
+  // Get user permissions for this album
+  const userRole = user ? getCurrentUserRole(album, user.id) : null
+  const permissions = getUserPermissions(userRole)
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -340,57 +345,29 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
             <CardHeader>
               <CardTitle className="text-lg flex items-center justify-between">
                 <span>Members</span>
-                <Button size="sm" disabled>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Invite
-                </Button>
+                {permissions.canInviteMembers && (
+                  <Button size="sm" onClick={() => setInviteModalOpen(true)}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Invite
+                  </Button>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {album.members && album.members.length > 0 ? (
-                  album.members.slice(0, 5).map((member) => (
-                    <div key={member.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={member.user?.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
-                            {member.user?.full_name?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {member.user?.full_name || 'Unknown'}
-                          </p>
-                          <div className="flex items-center gap-1">
-                            {member.role === 'admin' && <Crown className="w-3 h-3 text-yellow-500" />}
-                            {member.role === 'contributor' && <Edit3 className="w-3 h-3 text-green-500" />}
-                            {member.role === 'viewer' && <Eye className="w-3 h-3 text-gray-500" />}
-                            <span className="text-xs text-gray-500 capitalize">{member.role}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">No members yet</p>
-                )}
-                
-                {album.members && album.members.length > 5 && (
-                  <p className="text-xs text-gray-500 text-center pt-2">
-                    +{album.members.length - 5} more members
-                  </p>
-                )}
-                
-                <Separator />
-                <p className="text-xs text-gray-500 text-center">
-                  Full member management coming soon
-                </p>
-              </div>
+              <MemberManagement album={album} onUpdate={() => mutate()} />
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        albumId={albumId}
+        albumName={album?.name || 'Album'}
+        onInviteSuccess={() => mutate()}
+      />
     </div>
   )
 }
