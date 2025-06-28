@@ -325,20 +325,22 @@ export async function createAlbumInvite(
     .single()
 
   // Send invitation email
-  // try {
-  //   const { sendAlbumInviteEmail, getInviteAcceptUrl } = await import('@/lib/email')
+  try {
+    const { sendAlbumInviteEmail, getInviteAcceptUrl } = await import(
+      '@/lib/email'
+    )
 
-  //   await sendAlbumInviteEmail({
-  //     to: invite.email,
-  //     inviterName: inviter?.full_name || 'Someone',
-  //     albumName: album?.name || 'Family Album',
-  //     role: invite.role,
-  //     inviteUrl: getInviteAcceptUrl(invite.token),
-  //   })
-  // } catch (emailError) {
-  //   console.error('Failed to send invite email:', emailError)
-  //   // Don't fail the invite creation if email fails
-  // }
+    await sendAlbumInviteEmail({
+      to: invite.email,
+      inviterName: inviter?.full_name || 'Someone',
+      albumName: album?.name || 'Family Album',
+      role: invite.role,
+      inviteUrl: getInviteAcceptUrl(invite.token),
+    })
+  } catch (emailError) {
+    console.error('Failed to send invite email:', emailError)
+    // Don't fail the invite creation if email fails
+  }
 
   return invite
 }
@@ -407,11 +409,10 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
   }
 
   // Mark invite as used using RPC function to bypass RLS
-  const { error: updateError } = await supabase
-    .rpc('mark_invite_as_used', {
-      invite_token: invite.token,
-      user_email: invite.email
-    })
+  const { error: updateError } = await supabase.rpc('mark_invite_as_used', {
+    invite_token: invite.token,
+    user_email: invite.email,
+  })
 
   if (updateError) {
     console.error('Error marking invite as used:', updateError)
