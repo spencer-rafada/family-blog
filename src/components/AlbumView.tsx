@@ -120,17 +120,21 @@ export default function AlbumView({ albumId }: AlbumViewProps) {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button asChild>
-              <Link href={`/create?album=${albumId}`}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Post
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={`/albums/${albumId}/settings`}>
-                <Settings className="w-4 h-4" />
-              </Link>
-            </Button>
+            {permissions.canCreatePosts && (
+              <Button asChild>
+                <Link href={`/create?album=${albumId}`}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Post
+                </Link>
+              </Button>
+            )}
+            {permissions.canEditAlbum && (
+              <Button variant="outline" asChild>
+                <Link href={`/albums/${albumId}/settings`}>
+                  <Settings className="w-4 h-4" />
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

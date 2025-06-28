@@ -132,13 +132,15 @@ export async function createAlbum(data: {
   }
 
   // Use RPC call to bypass RLS for album creation
-  const { data: album, error } = await supabase
-    .rpc('create_album_with_member', {
+  const { data: album, error } = await supabase.rpc(
+    'create_album_with_member',
+    {
       album_name: insertData.name,
       album_description: insertData.description,
       album_privacy_level: insertData.privacy_level,
-      creator_id: user.id
-    })
+      creator_id: user.id,
+    }
+  )
 
   if (error) {
     throw new Error(`Failed to create album: ${error.message}`)
@@ -323,34 +325,36 @@ export async function createAlbumInvite(
     .single()
 
   // Send invitation email
-  try {
-    const { sendAlbumInviteEmail, getInviteAcceptUrl } = await import('@/lib/email')
-    
-    await sendAlbumInviteEmail({
-      to: invite.email,
-      inviterName: inviter?.full_name || 'Someone',
-      albumName: album?.name || 'Family Album',
-      role: invite.role,
-      inviteUrl: getInviteAcceptUrl(invite.token),
-    })
-  } catch (emailError) {
-    console.error('Failed to send invite email:', emailError)
-    // Don't fail the invite creation if email fails
-  }
+  // try {
+  //   const { sendAlbumInviteEmail, getInviteAcceptUrl } = await import('@/lib/email')
+
+  //   await sendAlbumInviteEmail({
+  //     to: invite.email,
+  //     inviterName: inviter?.full_name || 'Someone',
+  //     albumName: album?.name || 'Family Album',
+  //     role: invite.role,
+  //     inviteUrl: getInviteAcceptUrl(invite.token),
+  //   })
+  // } catch (emailError) {
+  //   console.error('Failed to send invite email:', emailError)
+  //   // Don't fail the invite creation if email fails
+  // }
 
   return invite
 }
 
 export async function getInviteDetails(token: string) {
   const supabase = await createClient()
-  
+
   const { data: invite, error } = await supabase
     .from('album_invites')
-    .select(`
+    .select(
+      `
       *,
       album:albums(name, description),
       inviter:profiles!album_invites_invited_by_fkey(full_name)
-    `)
+    `
+    )
     .eq('token', token)
     .is('used_at', null)
     .gt('expires_at', new Date().toISOString())
@@ -402,24 +406,22 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
     throw new Error(`Failed to join album: ${memberError.message}`)
   }
 
-  // Mark invite as used
-  const { data: updatedInvite, error: updateError } = await supabase
-    .from('album_invites')
-    .update({ used_at: new Date().toISOString() })
-    .eq('id', invite.id)
-    .select()
+  // Mark invite as used using RPC function to bypass RLS
+  const { error: updateError } = await supabase
+    .rpc('mark_invite_as_used', {
+      invite_token: invite.token,
+      user_email: invite.email
+    })
 
   if (updateError) {
     console.error('Error marking invite as used:', updateError)
-    console.error('Update error details:', updateError.message, updateError.details)
     // Don't throw error for used_at update failure - the user is already added to album
   } else {
-    console.log('Successfully marked invite as used:', updatedInvite)
+    console.log('Successfully marked invite as used')
   }
 
   return invite.album_id
 }
-
 
 export async function requestToJoinAlbum(
   albumId: string,
@@ -486,10 +488,12 @@ export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
 
   const { data: invites, error } = await supabase
     .from('album_invites')
-    .select(`
+    .select(
+      `
       *,
       inviter:profiles!album_invites_invited_by_fkey(full_name)
-    `)
+    `
+    )
     .eq('album_id', albumId)
     .is('used_at', null)
     .gt('expires_at', new Date().toISOString())
