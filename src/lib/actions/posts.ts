@@ -86,6 +86,22 @@ export async function createPost(data: {
     throw new Error('Album ID is required')
   }
 
+  // Check user permissions for this album
+  const { getAlbum } = await import('./albums')
+  const { getCurrentUserRole, getUserPermissions } = await import('@/lib/permissions')
+  
+  const album = await getAlbum(data.album_id)
+  if (!album) {
+    throw new Error('Album not found')
+  }
+
+  const userRole = getCurrentUserRole(album, user.id)
+  const permissions = getUserPermissions(userRole)
+
+  if (!permissions.canCreatePosts) {
+    throw new Error('You do not have permission to create posts in this album')
+  }
+
   const { data: post, error } = await supabase
     .from('posts')
     .insert({
@@ -127,6 +143,32 @@ export async function updatePost(
     throw new Error('Post content is required')
   }
 
+  // Get the post to check ownership and album permissions
+  const existingPost = await getPost(id)
+  if (!existingPost) {
+    throw new Error('Post not found')
+  }
+
+  // Check if user is the author or has admin permissions
+  const isAuthor = existingPost.author_id === user.id
+  
+  if (existingPost.album_id) {
+    const { getAlbum } = await import('./albums')
+    const { getCurrentUserRole, getUserPermissions } = await import('@/lib/permissions')
+    
+    const album = await getAlbum(existingPost.album_id)
+    if (album) {
+      const userRole = getCurrentUserRole(album, user.id)
+      const permissions = getUserPermissions(userRole)
+      
+      if (!isAuthor && !permissions.canDeleteOthersPosts) {
+        throw new Error('You do not have permission to edit this post')
+      }
+    }
+  } else if (!isAuthor) {
+    throw new Error('You can only edit your own posts')
+  }
+
   const { data: post, error } = await supabase
     .from('posts')
     .update({
@@ -161,6 +203,32 @@ export async function updatePost(
 export async function deletePost(id: string): Promise<void> {
   const user = await requireAuth()
   const supabase = await createClient()
+
+  // Get the post to check ownership and album permissions
+  const existingPost = await getPost(id)
+  if (!existingPost) {
+    throw new Error('Post not found')
+  }
+
+  // Check if user is the author or has admin permissions
+  const isAuthor = existingPost.author_id === user.id
+  
+  if (existingPost.album_id) {
+    const { getAlbum } = await import('./albums')
+    const { getCurrentUserRole, getUserPermissions } = await import('@/lib/permissions')
+    
+    const album = await getAlbum(existingPost.album_id)
+    if (album) {
+      const userRole = getCurrentUserRole(album, user.id)
+      const permissions = getUserPermissions(userRole)
+      
+      if (!isAuthor && !permissions.canDeleteOthersPosts) {
+        throw new Error('You do not have permission to delete this post')
+      }
+    }
+  } else if (!isAuthor) {
+    throw new Error('You can only delete your own posts')
+  }
 
   const { error } = await supabase
     .from('posts')

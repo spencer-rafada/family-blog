@@ -132,13 +132,15 @@ export async function createAlbum(data: {
   }
 
   // Use RPC call to bypass RLS for album creation
-  const { data: album, error } = await supabase
-    .rpc('create_album_with_member', {
+  const { data: album, error } = await supabase.rpc(
+    'create_album_with_member',
+    {
       album_name: insertData.name,
       album_description: insertData.description,
       album_privacy_level: insertData.privacy_level,
-      creator_id: user.id
-    })
+      creator_id: user.id,
+    }
+  )
 
   if (error) {
     throw new Error(`Failed to create album: ${error.message}`)
@@ -309,10 +311,60 @@ export async function createAlbumInvite(
     throw new Error(`Failed to create album invite: ${error.message}`)
   }
 
-  // TODO: Send invitation email
-  console.log(
-    `Invite created for ${email} to album ${albumId} with token ${token}`
-  )
+  // Get album and inviter details for email
+  const { data: album } = await supabase
+    .from('albums')
+    .select('name')
+    .eq('id', albumId)
+    .single()
+
+  const { data: inviter } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  // Send invitation email
+  try {
+    const { sendAlbumInviteEmail, getInviteAcceptUrl } = await import(
+      '@/lib/email'
+    )
+
+    await sendAlbumInviteEmail({
+      to: invite.email,
+      inviterName: inviter?.full_name || 'Someone',
+      albumName: album?.name || 'Family Album',
+      role: invite.role,
+      inviteUrl: getInviteAcceptUrl(invite.token),
+    })
+  } catch (emailError) {
+    console.error('Failed to send invite email:', emailError)
+    // Don't fail the invite creation if email fails
+  }
+
+  return invite
+}
+
+export async function getInviteDetails(token: string) {
+  const supabase = await createClient()
+
+  const { data: invite, error } = await supabase
+    .from('album_invites')
+    .select(
+      `
+      *,
+      album:albums(name, description),
+      inviter:profiles!album_invites_invited_by_fkey(full_name)
+    `
+    )
+    .eq('token', token)
+    .is('used_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .single()
+
+  if (error) {
+    throw new Error('Invalid or expired invite')
+  }
 
   return invite
 }
@@ -356,14 +408,17 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
     throw new Error(`Failed to join album: ${memberError.message}`)
   }
 
-  // Mark invite as used
-  const { error: updateError } = await supabase
-    .from('album_invites')
-    .update({ used_at: new Date().toISOString() })
-    .eq('id', invite.id)
+  // Mark invite as used using RPC function to bypass RLS
+  const { error: updateError } = await supabase.rpc('mark_invite_as_used', {
+    invite_token: invite.token,
+    user_email: invite.email,
+  })
 
   if (updateError) {
     console.error('Error marking invite as used:', updateError)
+    // Don't throw error for used_at update failure - the user is already added to album
+  } else {
+    console.log('Successfully marked invite as used')
   }
 
   return invite.album_id
@@ -429,6 +484,7 @@ export async function requestToJoinAlbum(
 }
 
 export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
+  await requireAuth()
   const supabase = await createClient()
 
   const { data: invites, error } = await supabase
@@ -436,8 +492,7 @@ export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
     .select(
       `
       *,
-      album:albums(id, name),
-      inviter:profiles!album_invites_invited_by_fkey(id, full_name, avatar_url)
+      inviter:profiles!album_invites_invited_by_fkey(full_name)
     `
     )
     .eq('album_id', albumId)
@@ -446,7 +501,7 @@ export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
     .order('created_at', { ascending: false })
 
   if (error) {
-    throw new Error(`Failed to fetch album invites: ${error.message}`)
+    throw new Error(`Failed to fetch invites: ${error.message}`)
   }
 
   return invites
@@ -462,6 +517,6 @@ export async function cancelAlbumInvite(inviteId: string): Promise<void> {
     .eq('id', inviteId)
 
   if (error) {
-    throw new Error(`Failed to cancel album invite: ${error.message}`)
+    throw new Error(`Failed to cancel invite: ${error.message}`)
   }
 }

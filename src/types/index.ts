@@ -1,4 +1,4 @@
-import { MilestoneType, UserRole } from '@/lib/constants'
+import { MilestoneType } from '@/lib/constants'
 
 export interface PostImage {
   id: string
@@ -12,7 +12,6 @@ export interface Profile {
   full_name: string | null
   email: string
   avatar_url: string | null
-  role: UserRole
   is_invited: boolean
   invited_by: string | null
   created_at: string
