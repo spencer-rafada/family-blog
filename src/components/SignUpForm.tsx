@@ -20,7 +20,11 @@ interface SignUpFormProps {
   isInviteContext?: boolean
 }
 
-export function SignUpForm({ inviteToken, inviteEmail, isInviteContext }: SignUpFormProps) {
+export function SignUpForm({
+  inviteToken,
+  inviteEmail,
+  isInviteContext,
+}: SignUpFormProps) {
   const [email, setEmail] = useState(inviteEmail || '')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -41,6 +45,13 @@ export function SignUpForm({ inviteToken, inviteEmail, isInviteContext }: SignUp
     setError('')
     setMessage('')
 
+    // Construct redirect URL for email confirmation
+    const baseUrl = window.location.origin
+    const redirectTo =
+      isInviteContext && inviteToken
+        ? `${baseUrl}/api/auth/callback?invite_token=${inviteToken}`
+        : `${baseUrl}/api/auth/callback`
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -48,6 +59,7 @@ export function SignUpForm({ inviteToken, inviteEmail, isInviteContext }: SignUp
         data: {
           full_name: fullName,
         },
+        emailRedirectTo: redirectTo,
       },
     })
 
@@ -56,7 +68,9 @@ export function SignUpForm({ inviteToken, inviteEmail, isInviteContext }: SignUp
       setError(error.message)
     } else {
       if (isInviteContext) {
-        setMessage('Check your email for the confirmation link! After confirming, you can return to accept your invitation.')
+        setMessage(
+          'Check your email for the confirmation link! After confirming, you can return to accept your invitation.'
+        )
       } else {
         setMessage('Check your email for the confirmation link!')
       }
@@ -64,9 +78,7 @@ export function SignUpForm({ inviteToken, inviteEmail, isInviteContext }: SignUp
     setLoading(false)
   }
 
-  const loginUrl = inviteToken 
-    ? `/login?invite_token=${inviteToken}`
-    : '/login'
+  const loginUrl = inviteToken ? `/login?invite_token=${inviteToken}` : '/login'
 
   return (
     <div className='min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4'>
@@ -76,22 +88,22 @@ export function SignUpForm({ inviteToken, inviteEmail, isInviteContext }: SignUp
             {isInviteContext ? 'Accept Your Invitation' : 'Join the Family'}
           </CardTitle>
           <CardDescription>
-            {isInviteContext 
+            {isInviteContext
               ? 'Create your account to join the album'
-              : 'Create your account to view family updates'
-            }
+              : 'Create your account to view family updates'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isInviteContext && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800">
-                You&apos;ve been invited to join an album! Create your account with the email address{' '}
-                <strong>{inviteEmail}</strong> to accept the invitation.
+            <div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md'>
+              <p className='text-sm text-blue-800'>
+                You&apos;ve been invited to join an album! Create your account
+                with the email address <strong>{inviteEmail}</strong> to accept
+                the invitation.
               </p>
             </div>
           )}
-          
+
           <form onSubmit={handleSignUp} className='space-y-4'>
             <div className='space-y-2'>
               <Label htmlFor='fullName'>Full Name</Label>
@@ -116,7 +128,7 @@ export function SignUpForm({ inviteToken, inviteEmail, isInviteContext }: SignUp
                 disabled={isInviteContext && !!inviteEmail}
               />
               {isInviteContext && inviteEmail && (
-                <p className="text-xs text-gray-600">
+                <p className='text-xs text-gray-600'>
                   This email is pre-filled from your invitation
                 </p>
               )}
