@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, User, LogOut, Users, Globe } from 'lucide-react'
+import { Plus, User, LogOut, Users, Globe, Mail } from 'lucide-react'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys } from '@/lib/constants'
 import { revalidateProfile } from '@/lib/swr'
@@ -114,6 +114,12 @@ export default function Navbar() {
                       <Link href="/profile">
                         <User className="w-4 h-4 mr-2" />
                         Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/invites">
+                        <Mail className="w-4 h-4 mr-2" />
+                        Invites
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
