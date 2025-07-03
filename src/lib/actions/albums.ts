@@ -520,3 +520,78 @@ export async function cancelAlbumInvite(inviteId: string): Promise<void> {
     throw new Error(`Failed to cancel invite: ${error.message}`)
   }
 }
+
+export async function getUserPendingInvites(): Promise<AlbumInvite[]> {
+  const user = await requireAuth()
+  const supabase = await createClient()
+
+  // Get user's profile to get email
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile) {
+    throw new Error('Profile not found')
+  }
+
+  const { data: invites, error } = await supabase
+    .from('album_invites')
+    .select(
+      `
+      *,
+      album:albums(id, name, description),
+      inviter:profiles!album_invites_invited_by_fkey(full_name, avatar_url)
+    `
+    )
+    .eq('email', profile.email)
+    .is('used_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Failed to fetch pending invites: ${error.message}`)
+  }
+
+  return invites
+}
+
+export async function declineAlbumInvite(token: string): Promise<void> {
+  const user = await requireAuth()
+  const supabase = await createClient()
+
+  // Get the invite
+  const { data: invite, error: inviteError } = await supabase
+    .from('album_invites')
+    .select('*')
+    .eq('token', token)
+    .is('used_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .single()
+
+  if (inviteError || !invite) {
+    throw new Error('Invalid or expired invite')
+  }
+
+  // Check if user email matches invite
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || profile.email !== invite.email) {
+    throw new Error('This invite is for a different email address')
+  }
+
+  // Delete the invite (declining it)
+  const { error: deleteError } = await supabase
+    .from('album_invites')
+    .delete()
+    .eq('token', token)
+
+  if (deleteError) {
+    throw new Error(`Failed to decline invite: ${deleteError.message}`)
+  }
+}
