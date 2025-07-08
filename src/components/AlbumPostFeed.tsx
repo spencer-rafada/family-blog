@@ -124,6 +124,8 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
                     <Image
                       src={image.image_url}
                       alt={image.caption || 'Post image'}
+                      width={500}
+                      height={500}
                       className='w-full rounded-lg max-h-96 object-cover'
                     />
                     {image.caption && (
