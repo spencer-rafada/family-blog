@@ -8,10 +8,10 @@ export async function GET(
   try {
     const invites = await getAlbumInvites(params.id)
     return NextResponse.json(invites)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in album invites API route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch album invites' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch album invites' },
       { status: 500 }
     )
   }
@@ -25,10 +25,10 @@ export async function POST(
     const { email, role } = await request.json()
     const invite = await createAlbumInvite(params.id, email, role)
     return NextResponse.json(invite)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating album invite:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to create album invite' },
+      { error: error instanceof Error ? error.message : 'Failed to create album invite' },
       { status: 500 }
     )
   }

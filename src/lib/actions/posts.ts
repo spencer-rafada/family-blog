@@ -2,21 +2,20 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth-utils'
-import type { Post, MilestoneType } from '@/types'
+import type { Post, PostImage } from '@/types'
+import { MilestoneType } from '../constants'
 
 export async function getPosts(albumId?: string): Promise<Post[]> {
   const supabase = await createClient()
 
-  let query = supabase
-    .from('posts')
-    .select(
-      `
+  let query = supabase.from('posts').select(
+    `
       *,
       author:profiles(*),
       album:albums(id, name),
       post_images(*)
     `
-    )
+  )
 
   // Filter by album if specified
   if (albumId) {
@@ -33,7 +32,7 @@ export async function getPosts(albumId?: string): Promise<Post[]> {
   return data.map((post) => ({
     ...post,
     post_images: post.post_images.sort(
-      (a: any, b: any) => a.display_order - b.display_order
+      (a: PostImage, b: PostImage) => a.display_order - b.display_order
     ),
   }))
 }
@@ -64,7 +63,7 @@ export async function getPost(id: string): Promise<Post | null> {
   return {
     ...post,
     post_images: post.post_images.sort(
-      (a: any, b: any) => a.display_order - b.display_order
+      (a: PostImage, b: PostImage) => a.display_order - b.display_order
     ),
   }
 }
@@ -88,8 +87,10 @@ export async function createPost(data: {
 
   // Check user permissions for this album
   const { getAlbum } = await import('./albums')
-  const { getCurrentUserRole, getUserPermissions } = await import('@/lib/permissions')
-  
+  const { getCurrentUserRole, getUserPermissions } = await import(
+    '@/lib/permissions'
+  )
+
   const album = await getAlbum(data.album_id)
   if (!album) {
     throw new Error('Album not found')
@@ -151,16 +152,18 @@ export async function updatePost(
 
   // Check if user is the author or has admin permissions
   const isAuthor = existingPost.author_id === user.id
-  
+
   if (existingPost.album_id) {
     const { getAlbum } = await import('./albums')
-    const { getCurrentUserRole, getUserPermissions } = await import('@/lib/permissions')
-    
+    const { getCurrentUserRole, getUserPermissions } = await import(
+      '@/lib/permissions'
+    )
+
     const album = await getAlbum(existingPost.album_id)
     if (album) {
       const userRole = getCurrentUserRole(album, user.id)
       const permissions = getUserPermissions(userRole)
-      
+
       if (!isAuthor && !permissions.canDeleteOthersPosts) {
         throw new Error('You do not have permission to edit this post')
       }
@@ -195,7 +198,7 @@ export async function updatePost(
   return {
     ...post,
     post_images: post.post_images.sort(
-      (a: any, b: any) => a.display_order - b.display_order
+      (a: PostImage, b: PostImage) => a.display_order - b.display_order
     ),
   }
 }
@@ -212,16 +215,18 @@ export async function deletePost(id: string): Promise<void> {
 
   // Check if user is the author or has admin permissions
   const isAuthor = existingPost.author_id === user.id
-  
+
   if (existingPost.album_id) {
     const { getAlbum } = await import('./albums')
-    const { getCurrentUserRole, getUserPermissions } = await import('@/lib/permissions')
-    
+    const { getCurrentUserRole, getUserPermissions } = await import(
+      '@/lib/permissions'
+    )
+
     const album = await getAlbum(existingPost.album_id)
     if (album) {
       const userRole = getCurrentUserRole(album, user.id)
       const permissions = getUserPermissions(userRole)
-      
+
       if (!isAuthor && !permissions.canDeleteOthersPosts) {
         throw new Error('You do not have permission to delete this post')
       }
@@ -230,10 +235,7 @@ export async function deletePost(id: string): Promise<void> {
     throw new Error('You can only delete your own posts')
   }
 
-  const { error } = await supabase
-    .from('posts')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabase.from('posts').delete().eq('id', id)
 
   if (error) {
     throw new Error(`Failed to delete post: ${error.message}`)

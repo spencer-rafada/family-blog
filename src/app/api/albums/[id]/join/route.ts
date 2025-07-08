@@ -9,10 +9,10 @@ export async function POST(
     const { message } = await request.json()
     const invite = await requestToJoinAlbum(params.id, message)
     return NextResponse.json(invite)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error requesting to join album:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to request album access' },
+      { error: error instanceof Error ? error.message : 'Failed to request album access' },
       { status: 500 }
     )
   }

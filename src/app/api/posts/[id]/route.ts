@@ -8,16 +8,15 @@ export async function GET(
   try {
     const post = await getPost(params.id)
     if (!post) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
     }
     return NextResponse.json(post)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in post API route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch post' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to fetch post',
+      },
       { status: 500 }
     )
   }
@@ -31,10 +30,12 @@ export async function PUT(
     const data = await request.json()
     const post = await updatePost(params.id, data)
     return NextResponse.json(post)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating post:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to update post' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to update post',
+      },
       { status: 500 }
     )
   }
@@ -47,10 +48,12 @@ export async function DELETE(
   try {
     await deletePost(params.id)
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting post:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to delete post' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to delete post',
+      },
       { status: 500 }
     )
   }

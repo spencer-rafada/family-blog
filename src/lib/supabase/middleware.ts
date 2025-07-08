@@ -15,7 +15,9 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
           supabaseResponse = NextResponse.next({
             request,
           })
@@ -37,25 +39,22 @@ export async function updateSession(request: NextRequest) {
     '/profile',
     '/settings',
     '/admin',
-    '/dashboard'
+    '/dashboard',
   ]
 
   // Define public routes (posts can be public in the future)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const publicRoutes = [
     '/',
     '/login',
-    '/signup', 
+    '/signup',
     '/invite',
     '/posts', // Individual posts could be public
-    '/about'
+    '/about',
   ]
 
-  const isProtectedRoute = protectedRoutes.some(route => 
+  const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
-  )
-
-  const isPublicRoute = publicRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route) || request.nextUrl.pathname === route
   )
 
   // Only redirect to login for protected routes when user is not authenticated

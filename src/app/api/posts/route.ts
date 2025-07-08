@@ -4,14 +4,17 @@ import { getPosts, createPost } from '@/lib/actions/posts'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const albumId = searchParams.get('album') || searchParams.get('albumId') || undefined
-    
+    const albumId =
+      searchParams.get('album') || searchParams.get('albumId') || undefined
+
     const posts = await getPosts(albumId)
     return NextResponse.json(posts)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in posts API route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch posts' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to fetch posts',
+      },
       { status: 500 }
     )
   }
@@ -22,10 +25,12 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     const post = await createPost(data)
     return NextResponse.json(post)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating post:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to create post' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to create post',
+      },
       { status: 500 }
     )
   }

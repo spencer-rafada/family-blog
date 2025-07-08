@@ -66,7 +66,7 @@ export default function AlbumView({ albumId }: AlbumViewProps) {
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Album not found</h2>
             <p className="text-gray-600 mb-4">
-              The album you're looking for doesn't exist or you don't have permission to view it.
+              The album you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
             </p>
             <Button onClick={() => router.push('/albums')}>
               <ArrowLeft className="w-4 h-4 mr-2" />

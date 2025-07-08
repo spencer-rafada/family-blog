@@ -5,14 +5,14 @@ import CommentSection from './CommentSection'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys } from '@/lib/constants'
 import { revalidateComments } from '@/lib/swr'
-import type { Comment, Profile } from '@/types'
+import type { Comment, Profile, Post } from '@/types'
 
 interface PostCommentsProps {
   postId: string
 }
 
 export default function PostComments({ postId }: PostCommentsProps) {
-  const { data: comments = [], error, isLoading } = useSWR<Comment[]>(
+  const { data: comments = [], error } = useSWR<Comment[]>(
     `${SWRKeys.COMMENTS}?postId=${postId}`,
     fetcher,
     {
@@ -60,7 +60,7 @@ export default function PostComments({ postId }: PostCommentsProps) {
 
   return (
     <CommentSection
-      post={{ id: postId } as any} // We only need the ID for the comment section
+      post={{ id: postId } as unknown as Post} // We only need the ID for the comment section
       comments={comments}
       currentUser={currentUser}
       onAddComment={handleAddComment}

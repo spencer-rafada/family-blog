@@ -8,10 +8,15 @@ export async function POST(
   try {
     const albumId = await acceptAlbumInvite(params.token)
     return NextResponse.json({ albumId })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error accepting album invite:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to accept album invite' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to accept album invite',
+      },
       { status: 500 }
     )
   }
