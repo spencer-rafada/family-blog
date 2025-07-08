@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getPublicAlbums } from '@/lib/actions/albums'
+import { discoverFlag } from '@/lib/flags'
 
 export async function GET() {
   try {
+    const isDiscoverEnabled = await discoverFlag()
+    
+    if (!isDiscoverEnabled) {
+      return NextResponse.json(
+        { error: 'Discover functionality is not available' },
+        { status: 404 }
+      )
+    }
+    
     const albums = await getPublicAlbums()
     return NextResponse.json(albums)
   } catch (error: unknown) {

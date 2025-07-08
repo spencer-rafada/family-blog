@@ -17,9 +17,11 @@ import { fetcher } from '@/lib/fetcher'
 import { SWRKeys } from '@/lib/constants'
 import { revalidateProfile } from '@/lib/swr'
 import type { Profile } from '@/types'
+import { useFlags } from '@/hooks/useFlags'
 
 export default function Navbar() {
   const supabase = createClient()
+  const flags = useFlags()
   const { data: profile, error, isLoading } = useSWR<Profile>(SWRKeys.PROFILE, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
@@ -72,12 +74,14 @@ export default function Navbar() {
                 </Button>
 
                 {/* Discover Albums Link */}
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/discover">
-                    <Globe className="w-4 h-4 mr-2" />
-                    Discover
-                  </Link>
-                </Button>
+                {flags.discover && (
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href="/discover">
+                      <Globe className="w-4 h-4 mr-2" />
+                      Discover
+                    </Link>
+                  </Button>
+                )}
 
                 {/* Create Post Button */}
                 <Button asChild size="sm">
@@ -110,12 +114,14 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">
-                        <User className="w-4 h-4 mr-2" />
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
+                    {flags.profile && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile">
+                          <User className="w-4 h-4 mr-2" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/invites">
                         <Mail className="w-4 h-4 mr-2" />
