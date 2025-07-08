@@ -256,6 +256,8 @@ export default function CreatePostForm({
                           <Image
                             src={image.preview}
                             alt={`Upload ${index + 1}`}
+                            width={500}
+                            height={500}
                             className='w-20 h-20 object-cover rounded'
                           />
                           <Button
