@@ -70,7 +70,7 @@ export default function AlbumSettings({ albumId }: AlbumSettingsProps) {
   })
 
   // Get user permissions for this album
-  const userRole = user ? getCurrentUserRole(album, user.id) : null
+  const userRole = user ? getCurrentUserRole(album!, user.id) : null
   const permissions = getUserPermissions(userRole)
 
   const handleSave = async (e: React.FormEvent) => {

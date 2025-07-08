@@ -3,10 +3,10 @@ import { cancelAlbumInvite } from '@/lib/actions/albums'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { inviteId: string } }
+  { params }: { params: Promise<{ inviteId: string }> }
 ) {
   try {
-    await cancelAlbumInvite(params.inviteId)
+    await cancelAlbumInvite((await params).inviteId)
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     console.error('Error canceling album invite:', error)

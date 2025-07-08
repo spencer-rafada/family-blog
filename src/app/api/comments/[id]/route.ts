@@ -3,7 +3,7 @@ import { updateComment, deleteComment } from '@/lib/actions/comments'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { content } = await request.json()
@@ -32,7 +32,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const commentId = (await params).id

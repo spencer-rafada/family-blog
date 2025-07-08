@@ -3,10 +3,10 @@ import { getPost, updatePost, deletePost } from '@/lib/actions/posts'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const post = await getPost(params.id)
+    const post = await getPost((await params).id)
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 })
     }
@@ -24,11 +24,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const data = await request.json()
-    const post = await updatePost(params.id, data)
+    const post = await updatePost((await params).id, data)
     return NextResponse.json(post)
   } catch (error: unknown) {
     console.error('Error updating post:', error)
@@ -43,10 +43,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await deletePost(params.id)
+    await deletePost((await params).id)
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     console.error('Error deleting post:', error)

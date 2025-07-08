@@ -3,10 +3,10 @@ import { acceptAlbumInvite } from '@/lib/actions/albums'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const albumId = await acceptAlbumInvite(params.token)
+    const albumId = await acceptAlbumInvite((await params).token)
     return NextResponse.json({ albumId })
   } catch (error: unknown) {
     console.error('Error accepting album invite:', error)
