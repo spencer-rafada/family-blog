@@ -3,7 +3,7 @@ import { updateComment, deleteComment } from '@/lib/actions/comments'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { content } = await request.json()
@@ -18,10 +18,13 @@ export async function PATCH(
 
     const comment = await updateComment(commentId, content)
     return NextResponse.json(comment)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in comment PATCH route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to update comment' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to update comment',
+      },
       { status: 500 }
     )
   }
@@ -29,16 +32,19 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const commentId = (await params).id
     await deleteComment(commentId)
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in comment DELETE route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to delete comment' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to delete comment',
+      },
       { status: 500 }
     )
   }

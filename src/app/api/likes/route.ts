@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { likes, likeCount, isLiked } = await getPostLikes(postId)
     return NextResponse.json({ likes, likeCount, isLiked })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in likes GET route:', error)
     return NextResponse.json(
       { error: 'Failed to fetch likes' },
@@ -37,10 +37,12 @@ export async function POST(request: NextRequest) {
 
     const { isLiked, likeCount } = await toggleLike(postId)
     return NextResponse.json({ isLiked, likeCount })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in likes POST route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to toggle like' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to toggle like',
+      },
       { status: 500 }
     )
   }

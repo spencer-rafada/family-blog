@@ -16,7 +16,7 @@ export default function AlbumDiscovery() {
   const [joiningAlbum, setJoiningAlbum] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  const { data: albums = [], error, isLoading, mutate } = useSWR<Album[]>(
+  const { data: albums = [], error, isLoading } = useSWR<Album[]>(
     SWRKeys.PUBLIC_ALBUMS,
     fetcher
   )

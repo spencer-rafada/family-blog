@@ -5,10 +5,10 @@ export async function GET() {
   try {
     const albums = await getAlbums()
     return NextResponse.json(albums)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in albums API route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch albums' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch albums' },
       { status: 500 }
     )
   }
@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     const album = await createAlbum(data)
     return NextResponse.json(album)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating album:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to create album' },
+      { error: error instanceof Error ? error.message : 'Failed to create album' },
       { status: 500 }
     )
   }

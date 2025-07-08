@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const comments = await getCommentsByPostId(postId)
     return NextResponse.json(comments)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in comments GET route:', error)
     return NextResponse.json(
       { error: 'Failed to fetch comments' },
@@ -37,10 +37,13 @@ export async function POST(request: NextRequest) {
 
     const comment = await createComment(postId, content)
     return NextResponse.json(comment)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in comments POST route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to create comment' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to create comment',
+      },
       { status: 500 }
     )
   }

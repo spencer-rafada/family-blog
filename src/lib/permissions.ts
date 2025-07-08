@@ -1,4 +1,4 @@
-import { AlbumRole } from '@/types'
+import { Album, AlbumMember, AlbumRole } from '@/types'
 
 export interface UserPermissions {
   canInviteMembers: boolean
@@ -12,7 +12,9 @@ export interface UserPermissions {
 /**
  * Get user permissions based on their role in an album
  */
-export function getUserPermissions(userRole: AlbumRole | null): UserPermissions {
+export function getUserPermissions(
+  userRole: AlbumRole | null
+): UserPermissions {
   if (!userRole) {
     return {
       canInviteMembers: false,
@@ -70,7 +72,10 @@ export function getUserPermissions(userRole: AlbumRole | null): UserPermissions 
 /**
  * Get current user's role in an album from album data
  */
-export function getCurrentUserRole(album: any, currentUserId: string): AlbumRole | null {
+export function getCurrentUserRole(
+  album: Album,
+  currentUserId: string
+): AlbumRole | null {
   if (!album || !currentUserId) return null
 
   // Check if user is the album creator (always admin)
@@ -79,8 +84,10 @@ export function getCurrentUserRole(album: any, currentUserId: string): AlbumRole
   }
 
   // Check user's role in album members
-  const userMembership = album.members?.find((member: any) => member.user_id === currentUserId)
-  
+  const userMembership = album.members?.find(
+    (member: AlbumMember) => member.user_id === currentUserId
+  )
+
   if (userMembership) {
     return userMembership.role as AlbumRole
   }

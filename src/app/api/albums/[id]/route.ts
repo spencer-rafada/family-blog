@@ -12,10 +12,10 @@ export async function GET(
       return NextResponse.json({ error: 'Album not found' }, { status: 404 })
     }
     return NextResponse.json(album)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in album API route:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch album' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch album' },
       { status: 500 }
     )
   }
@@ -30,10 +30,10 @@ export async function PUT(
     const data = await request.json()
     const album = await updateAlbum(id, data)
     return NextResponse.json(album)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating album:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to update album' },
+      { error: error instanceof Error ? error.message : 'Failed to update album' },
       { status: 500 }
     )
   }
@@ -47,10 +47,10 @@ export async function DELETE(
   try {
     await deleteAlbum(id)
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting album:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to delete album' },
+      { error: error instanceof Error ? error.message : 'Failed to delete album' },
       { status: 500 }
     )
   }

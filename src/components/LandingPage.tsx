@@ -50,7 +50,7 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Share Life's Precious
+            Share Life&apos;s Precious
             <span className="text-blue-600"> Moments</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
@@ -112,7 +112,7 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600">
-                Your family's memories are private and secure
+                Your family&apos;s memories are private and secure
               </p>
             </CardContent>
           </Card>
@@ -126,7 +126,7 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-6">
-                Join your family's private blog and start sharing those special moments today.
+                Join your family&apos;s private blog and start sharing those special moments today.
               </p>
               <Button asChild size="lg">
                 <Link href="/login">Join Now</Link>

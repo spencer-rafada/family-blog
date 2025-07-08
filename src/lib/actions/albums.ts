@@ -164,7 +164,7 @@ export async function updateAlbum(
     throw new Error('Album name is required')
   }
 
-  const updateData: any = {
+  const updateData: Partial<Album> = {
     name: data.name.trim(),
     description: data.description?.trim() || null,
     updated_at: new Date().toISOString(),
@@ -426,6 +426,7 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
 
 export async function requestToJoinAlbum(
   albumId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   message?: string
 ): Promise<AlbumInvite> {
   const user = await requireAuth()
