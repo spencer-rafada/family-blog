@@ -35,6 +35,7 @@ Family-blog is a web application that allows users to create, manage, and share 
 - **Email**: Resend for email notifications
 - **Validation**: Zod schemas
 - **Form Handling**: React Hook Form with Zod resolvers
+- **Feature Flags**: Vercel Feature Flags for controlling feature rollouts
 
 ## Database Schema
 
@@ -67,6 +68,48 @@ The application uses Supabase with the following main entities:
 - **API Routes**: RESTful endpoints in `src/app/api/` for complex operations
 - SWR keys defined in `src/lib/constants.ts`
 
+## Feature Flags
+
+The application uses **Vercel Feature Flags** to control access to incomplete or experimental features:
+
+- **Flag Definitions**: Located in `src/lib/flags.ts`
+- **API Endpoint**: `src/app/.well-known/vercel/flags/route.ts` for Vercel Flags Explorer
+- **Environment Variable**: `FLAGS_SECRET` required for flag encryption/decryption
+- **Client Hook**: `useFlags()` hook in `src/hooks/useFlags.ts` for client-side flag access
+- **Server Usage**: Import flags directly from `src/lib/flags.ts` and `await flagName()`
+
+### Available Flags
+
+- `discoverFlag`: Controls discover page, navigation link, and public album APIs
+- `profileFlag`: Controls profile page and navigation link
+- `adminFlag`: Controls admin dashboard access
+- `settingsFlag`: Controls general settings page
+- `publicPostsFlag`: Controls public posts feature
+- `aboutFlag`: Controls about page
+
+### Usage Patterns
+
+**Server Components:**
+```typescript
+import { discoverFlag } from '@/lib/flags'
+
+export default async function Page() {
+  const isEnabled = await discoverFlag()
+  if (!isEnabled) notFound()
+  return <Component />
+}
+```
+
+**Client Components:**
+```typescript
+import { useFlags } from '@/hooks/useFlags'
+
+export default function Component() {
+  const flags = useFlags()
+  return flags.discover && <DiscoverLink />
+}
+```
+
 ## Key Features
 
 - **Album Management**: Create private/public albums with member invitations
@@ -85,7 +128,7 @@ The application uses Supabase with the following main entities:
 
 ## Development Notes
 
-- Environment variables required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- Environment variables required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `FLAGS_SECRET`
 - Uses TypeScript strict mode
 - Follows Next.js App Router conventions
 - Components use shadcn/ui design system
