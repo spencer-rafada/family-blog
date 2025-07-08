@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { decryptOverrides } from 'flags'
-import type { FlagOverridesType } from 'flags'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No encrypted flags provided' }, { status: 400 })
     }
 
-    const overrides = await decryptOverrides<FlagOverridesType>(encryptedFlags)
+    const overrides = await decryptOverrides(encryptedFlags)
     
     return NextResponse.json(overrides)
   } catch (error) {
