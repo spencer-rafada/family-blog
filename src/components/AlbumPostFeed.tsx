@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -11,16 +12,21 @@ import { formatDistanceToNow } from 'date-fns'
 import PostSkeleton from './PostSkeleton'
 import PostComments from './PostComments'
 import LikeButton from './LikeButton'
+import PostImages from './posts/PostImages'
+import ImageLightbox from './posts/ImageLightbox'
 import { fetcher } from '@/lib/fetcher'
 import { MILESTONE_LABELS } from '@/lib/constants'
 import type { Post } from '@/types'
-import Image from 'next/image'
 
 interface AlbumPostFeedProps {
   albumId: string
 }
 
 export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState<Post['post_images']>([])
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
   const {
     data: posts,
     error,
@@ -118,24 +124,14 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
             <p className='text-gray-700 whitespace-pre-wrap'>{post.content}</p>
 
             {post.post_images.length > 0 && (
-              <div className='space-y-4'>
-                {post.post_images.map((image) => (
-                  <div key={image.id} className='space-y-2'>
-                    <Image
-                      src={image.image_url}
-                      alt={image.caption || 'Post image'}
-                      width={500}
-                      height={500}
-                      className='w-full rounded-lg max-h-96 object-cover'
-                    />
-                    {image.caption && (
-                      <p className='text-sm text-gray-600 italic'>
-                        {image.caption}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <PostImages
+                images={post.post_images}
+                onImageClick={(index) => {
+                  setLightboxImages(post.post_images)
+                  setLightboxIndex(index)
+                  setLightboxOpen(true)
+                }}
+              />
             )}
 
             {/* Like Button */}
@@ -148,6 +144,14 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
           </CardContent>
         </Card>
       ))}
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </div>
   )
 }
