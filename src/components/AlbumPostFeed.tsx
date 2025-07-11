@@ -72,7 +72,7 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
                 Be the first to share a memory in this album.
               </p>
             </div>
-            <Button asChild>
+            <Button asChild className='w-full sm:w-auto'>
               <Link href={`/create?album=${albumId}`}>
                 <Plus className='w-4 h-4 mr-2' />
                 Add First Post
@@ -89,17 +89,17 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
       {posts.map((post) => (
         <Card key={post.id} className='overflow-hidden'>
           <CardHeader className='pb-3'>
-            <div className='flex items-center justify-between'>
+            <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
               <div className='flex items-center space-x-3'>
-                <Avatar>
+                <Avatar className='w-10 h-10 sm:w-9 sm:h-9'>
                   <AvatarImage src={post.author.avatar_url || undefined} />
                   <AvatarFallback>
                     {post.author.full_name?.charAt(0) ||
                       post.author.email.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className='font-medium text-sm'>
+                <div className='min-w-0 flex-1'>
+                  <p className='font-medium text-sm truncate'>
                     {post.author.full_name || post.author.email}
                   </p>
                   <p className='text-xs text-gray-500'>
@@ -110,13 +110,13 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
                 </div>
               </div>
               {post.milestone_type && (
-                <Badge variant='secondary'>
+                <Badge variant='secondary' className='self-start sm:self-auto'>
                   {MILESTONE_LABELS[post.milestone_type]}
                 </Badge>
               )}
             </div>
             {post.title && (
-              <h3 className='font-semibold text-lg mt-2'>{post.title}</h3>
+              <h3 className='font-semibold text-base sm:text-lg mt-2'>{post.title}</h3>
             )}
           </CardHeader>
 
