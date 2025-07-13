@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth-utils'
+import { SupabaseErrorCode } from '@/lib/constants'
 import {
   Album,
   AlbumMember,
@@ -98,7 +99,7 @@ export async function getAlbum(id: string): Promise<Album | null> {
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
+    if (error.code === SupabaseErrorCode.NOT_FOUND) {
       return null // Album not found
     }
     throw new Error(`Failed to fetch album: ${error.message}`)
@@ -289,6 +290,58 @@ export async function createAlbumInvite(
   const user = await requireAuth()
   const supabase = await createClient()
 
+  // Normalize email
+  const normalizedEmail = email.toLowerCase().trim()
+
+  // Check if user with this email already exists
+  const { data: existingProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', normalizedEmail)
+    .single()
+
+  // Handle profile lookup error (ignore not found errors)
+  if (profileError && profileError.code !== SupabaseErrorCode.NOT_FOUND) {
+    throw new Error(`Failed to check user profile: ${profileError.message}`)
+  }
+
+  // If user exists, check if they're already a member
+  if (existingProfile) {
+    const { data: existingMember, error: memberError } = await supabase
+      .from('album_members')
+      .select('id')
+      .eq('album_id', albumId)
+      .eq('user_id', existingProfile.id)
+      .single()
+
+    // Handle member lookup error (ignore not found errors)
+    if (memberError && memberError.code !== SupabaseErrorCode.NOT_FOUND) {
+      throw new Error(`Failed to check album membership: ${memberError.message}`)
+    }
+
+    if (existingMember) {
+      throw new Error('This user is already a member of the album')
+    }
+  }
+
+  // Check if there's already a pending invite for this email
+  const { data: existingInvite, error: inviteError } = await supabase
+    .from('album_invites')
+    .select('id')
+    .eq('album_id', albumId)
+    .eq('email', normalizedEmail)
+    .eq('status', 'pending')
+    .single()
+
+  // Handle invite lookup error (ignore not found errors)
+  if (inviteError && inviteError.code !== SupabaseErrorCode.NOT_FOUND) {
+    throw new Error(`Failed to check existing invitations: ${inviteError.message}`)
+  }
+
+  if (existingInvite) {
+    throw new Error('An invitation has already been sent to this email')
+  }
+
   // Generate invite token
   const token = crypto.randomUUID()
   const expiresAt = new Date()
@@ -298,7 +351,7 @@ export async function createAlbumInvite(
     .from('album_invites')
     .insert({
       album_id: albumId,
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       invited_by: user.id,
       role: role,
       token: token,

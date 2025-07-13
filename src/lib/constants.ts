@@ -33,3 +33,8 @@ export enum UserRole {
   ADMIN = 'admin',
   MEMBER = 'member',
 }
+
+// Supabase Error Codes
+export enum SupabaseErrorCode {
+  NOT_FOUND = 'PGRST116', // Row not found
+}
