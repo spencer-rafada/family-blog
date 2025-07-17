@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAlbumInvites, createAlbumInvite } from '@/lib/actions/albums'
+import { getAlbumInvites, createAlbumInvite } from '@/lib/actions/invites'
 
 export async function GET(
   request: NextRequest,

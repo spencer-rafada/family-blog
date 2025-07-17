@@ -1,7 +1,7 @@
 'use client'
 
 import { useReducer, useState } from 'react'
-import { createAlbumInvite, createShareableInvite } from '@/lib/actions/albums'
+import { createAlbumInvite, createShareableInvite } from '@/lib/actions/invites'
 import { AlbumRole } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Crown, Edit3, Eye, UserPlus, Mail, Link, Copy, Check } from 'lucide-react'
+import {
+  Crown,
+  Edit3,
+  Eye,
+  UserPlus,
+  Mail,
+  Link,
+  Copy,
+  Check,
+} from 'lucide-react'
 import { getInviteAcceptUrl } from '@/lib/invite-utils'
 
 // State types
@@ -64,16 +73,29 @@ const initialState: InviteModalState = {
 }
 
 // Reducer
-function inviteModalReducer(state: InviteModalState, action: InviteModalAction): InviteModalState {
+function inviteModalReducer(
+  state: InviteModalState,
+  action: InviteModalAction
+): InviteModalState {
   switch (action.type) {
     case 'SET_TAB':
-      return { ...state, activeTab: action.payload, request: { status: 'idle' } }
+      return {
+        ...state,
+        activeTab: action.payload,
+        request: { status: 'idle' },
+      }
     case 'SET_EMAIL':
-      return { ...state, formData: { ...state.formData, email: action.payload } }
+      return {
+        ...state,
+        formData: { ...state.formData, email: action.payload },
+      }
     case 'SET_ROLE':
       return { ...state, formData: { ...state.formData, role: action.payload } }
     case 'SET_MAX_USES':
-      return { ...state, formData: { ...state.formData, maxUses: action.payload } }
+      return {
+        ...state,
+        formData: { ...state.formData, maxUses: action.payload },
+      }
     case 'START_REQUEST':
       return { ...state, request: { status: 'loading' } }
     case 'REQUEST_SUCCESS':
@@ -99,10 +121,16 @@ interface InviteModalProps {
   onInviteSuccess?: () => void
 }
 
-export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSuccess }: InviteModalProps) {
+export function InviteModal({
+  isOpen,
+  onClose,
+  albumId,
+  albumName,
+  onInviteSuccess,
+}: InviteModalProps) {
   const [state, dispatch] = useReducer(inviteModalReducer, initialState)
   const [copied, setCopied] = useState(false)
-  
+
   // Derived state
   const isLoading = state.request.status === 'loading'
   const hasError = state.request.status === 'error'
@@ -118,7 +146,7 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
     },
     {
       value: AlbumRole.CONTRIBUTOR,
-      label: 'Contributor', 
+      label: 'Contributor',
       description: 'Can add posts and memories',
       icon: Edit3,
       iconColor: 'text-green-500',
@@ -132,7 +160,9 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
     },
   ]
 
-  const selectedRoleOption = roleOptions.find(option => option.value === state.formData.role)
+  const selectedRoleOption = roleOptions.find(
+    (option) => option.value === state.formData.role
+  )
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -147,20 +177,23 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
         throw new Error('Please enter a valid email address')
       }
 
-      await createAlbumInvite(albumId, state.formData.email.trim(), state.formData.role)
-      
+      await createAlbumInvite(
+        albumId,
+        state.formData.email.trim(),
+        state.formData.role
+      )
+
       dispatch({ type: 'REQUEST_SUCCESS' })
-      
+
       // Call success callback after short delay to show success message
       setTimeout(() => {
         onInviteSuccess?.()
         handleClose()
       }, 1500)
-      
     } catch (err) {
-      dispatch({ 
-        type: 'REQUEST_ERROR', 
-        error: err instanceof Error ? err.message : 'Failed to send invite' 
+      dispatch({
+        type: 'REQUEST_ERROR',
+        error: err instanceof Error ? err.message : 'Failed to send invite',
       })
     }
   }
@@ -169,13 +202,17 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
     dispatch({ type: 'START_REQUEST' })
 
     try {
-      const invite = await createShareableInvite(albumId, state.formData.role, state.formData.maxUses)
+      const invite = await createShareableInvite(
+        albumId,
+        state.formData.role,
+        state.formData.maxUses
+      )
       const inviteUrl = getInviteAcceptUrl(invite.token)
       dispatch({ type: 'REQUEST_SUCCESS', generatedLink: inviteUrl })
     } catch (err) {
-      dispatch({ 
-        type: 'REQUEST_ERROR', 
-        error: err instanceof Error ? err.message : 'Failed to generate link' 
+      dispatch({
+        type: 'REQUEST_ERROR',
+        error: err instanceof Error ? err.message : 'Failed to generate link',
       })
     }
   }
@@ -199,10 +236,10 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
+          <DialogTitle className='flex items-center gap-2'>
+            <UserPlus className='w-5 h-5' />
             Invite to {albumName}
           </DialogTitle>
           <DialogDescription>
@@ -210,59 +247,70 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={state.activeTab} onValueChange={(value) => dispatch({ type: 'SET_TAB', payload: value as 'email' | 'link' })}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="email">
-              <Mail className="w-4 h-4 mr-2" />
+        <Tabs
+          value={state.activeTab}
+          onValueChange={(value) =>
+            dispatch({ type: 'SET_TAB', payload: value as 'email' | 'link' })
+          }
+        >
+          <TabsList className='grid w-full grid-cols-2'>
+            <TabsTrigger value='email'>
+              <Mail className='w-4 h-4 mr-2' />
               Email Invite
             </TabsTrigger>
-            <TabsTrigger value="link">
-              <Link className="w-4 h-4 mr-2" />
+            <TabsTrigger value='link'>
+              <Link className='w-4 h-4 mr-2' />
               Shareable Link
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="email">
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
+          <TabsContent value='email'>
+            <form onSubmit={handleEmailSubmit} className='space-y-4'>
+              <div className='space-y-2'>
+                <Label htmlFor='email' className='flex items-center gap-2'>
+                  <Mail className='w-4 h-4' />
                   Email Address
                 </Label>
                 <Input
-                  id="email"
-                  type="email"
+                  id='email'
+                  type='email'
                   value={state.formData.email}
-                  onChange={(e) => dispatch({ type: 'SET_EMAIL', payload: e.target.value })}
-                  placeholder="Enter email address..."
+                  onChange={(e) =>
+                    dispatch({ type: 'SET_EMAIL', payload: e.target.value })
+                  }
+                  placeholder='Enter email address...'
                   disabled={isLoading}
                   required
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role">Role & Permissions</Label>
-                <Select 
-                  value={state.formData.role} 
-                  onValueChange={(value: AlbumRole) => dispatch({ type: 'SET_ROLE', payload: value })}
+              <div className='space-y-2'>
+                <Label htmlFor='role'>Role & Permissions</Label>
+                <Select
+                  value={state.formData.role}
+                  onValueChange={(value: AlbumRole) =>
+                    dispatch({ type: 'SET_ROLE', payload: value })
+                  }
                 >
-                  <SelectTrigger data-testid="role-select-trigger">
+                  <SelectTrigger data-testid='role-select-trigger'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {roleOptions.map((option) => {
                       const Icon = option.icon
                       return (
-                        <SelectItem 
-                          key={option.value} 
+                        <SelectItem
+                          key={option.value}
                           value={option.value}
                           data-testid={`role-option-${option.value}`}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className='flex items-center gap-2'>
                             <Icon className={`w-4 h-4 ${option.iconColor}`} />
                             <div>
-                              <div className="font-medium">{option.label}</div>
-                              <div className="text-xs text-gray-500">{option.description}</div>
+                              <div className='font-medium'>{option.label}</div>
+                              <div className='text-xs text-gray-500'>
+                                {option.description}
+                              </div>
                             </div>
                           </div>
                         </SelectItem>
@@ -270,62 +318,78 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
                     })}
                   </SelectContent>
                 </Select>
-                
+
                 {selectedRoleOption && (
-                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded" data-testid="role-description">
-                    <strong>{selectedRoleOption.label}:</strong> {selectedRoleOption.description}
+                  <div
+                    className='text-xs text-gray-600 bg-gray-50 p-2 rounded'
+                    data-testid='role-description'
+                  >
+                    <strong>{selectedRoleOption.label}:</strong>{' '}
+                    {selectedRoleOption.description}
                   </div>
                 )}
               </div>
 
               {hasError && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
+                <div className='text-sm text-red-600 bg-red-50 p-3 rounded'>
                   {state.request.error}
                 </div>
               )}
 
               {isSuccess && state.activeTab === 'email' && (
-                <div className="text-sm text-green-600 bg-green-50 p-3 rounded">
+                <div className='text-sm text-green-600 bg-green-50 p-3 rounded'>
                   Invitation sent to {state.formData.email}
                 </div>
               )}
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={handleClose}
+                  disabled={isLoading}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button type='submit' disabled={isLoading}>
                   {isLoading ? 'Sending...' : 'Send Invitation'}
                 </Button>
               </DialogFooter>
             </form>
           </TabsContent>
 
-          <TabsContent value="link">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="role-link">Role & Permissions</Label>
-                <Select 
-                  value={state.formData.role} 
-                  onValueChange={(value: AlbumRole) => dispatch({ type: 'SET_ROLE', payload: value })}
+          <TabsContent value='link'>
+            <div className='space-y-4'>
+              <div className='space-y-2'>
+                <Label htmlFor='role-link'>Role & Permissions</Label>
+                <Select
+                  value={state.formData.role}
+                  onValueChange={(value: AlbumRole) =>
+                    dispatch({ type: 'SET_ROLE', payload: value })
+                  }
                 >
-                  <SelectTrigger id="role-link" data-testid="role-select-trigger-link">
+                  <SelectTrigger
+                    id='role-link'
+                    data-testid='role-select-trigger-link'
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {roleOptions.map((option) => {
                       const Icon = option.icon
                       return (
-                        <SelectItem 
-                          key={option.value} 
+                        <SelectItem
+                          key={option.value}
                           value={option.value}
                           data-testid={`role-option-link-${option.value}`}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className='flex items-center gap-2'>
                             <Icon className={`w-4 h-4 ${option.iconColor}`} />
                             <div>
-                              <div className="font-medium">{option.label}</div>
-                              <div className="text-xs text-gray-500">{option.description}</div>
+                              <div className='font-medium'>{option.label}</div>
+                              <div className='text-xs text-gray-500'>
+                                {option.description}
+                              </div>
                             </div>
                           </div>
                         </SelectItem>
@@ -335,67 +399,78 @@ export function InviteModal({ isOpen, onClose, albumId, albumName, onInviteSucce
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="max-uses">Maximum Uses (Optional)</Label>
+              <div className='space-y-2'>
+                <Label htmlFor='max-uses'>Maximum Uses (Optional)</Label>
                 <Input
-                  id="max-uses"
-                  type="number"
-                  min="1"
+                  id='max-uses'
+                  type='number'
+                  min='1'
                   value={state.formData.maxUses || ''}
-                  onChange={(e) => dispatch({ 
-                    type: 'SET_MAX_USES', 
-                    payload: e.target.value ? parseInt(e.target.value) : undefined 
-                  })}
-                  placeholder="Unlimited"
+                  onChange={(e) =>
+                    dispatch({
+                      type: 'SET_MAX_USES',
+                      payload: e.target.value
+                        ? parseInt(e.target.value)
+                        : undefined,
+                    })
+                  }
+                  placeholder='Unlimited'
                   disabled={isLoading}
                 />
-                <p className="text-xs text-gray-500">
+                <p className='text-xs text-gray-500'>
                   Leave empty for unlimited uses. Link expires in 30 days.
                 </p>
               </div>
 
               {state.generatedLink && (
-                <div className="space-y-2">
+                <div className='space-y-2'>
                   <Label>Generated Link</Label>
-                  <div className="flex gap-2">
+                  <div className='flex gap-2'>
                     <Input
                       value={state.generatedLink}
                       readOnly
-                      className="font-mono text-sm"
+                      className='font-mono text-sm'
                     />
                     <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
+                      type='button'
+                      size='sm'
+                      variant='outline'
                       onClick={handleCopyLink}
                     >
                       {copied ? (
-                        <Check className="w-4 h-4" />
+                        <Check className='w-4 h-4' />
                       ) : (
-                        <Copy className="w-4 h-4" />
+                        <Copy className='w-4 h-4' />
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className='text-xs text-gray-500'>
                     Share this link on Facebook, WhatsApp, or any platform!
                   </p>
                 </div>
               )}
 
               {hasError && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
+                <div className='text-sm text-red-600 bg-red-50 p-3 rounded'>
                   {state.request.error}
                 </div>
               )}
 
-              {isSuccess && state.activeTab === 'link' && !state.generatedLink && (
-                <div className="text-sm text-green-600 bg-green-50 p-3 rounded">
-                  Shareable link generated!
-                </div>
-              )}
+              {isSuccess &&
+                state.activeTab === 'link' &&
+                !state.generatedLink && (
+                  <div className='text-sm text-green-600 bg-green-50 p-3 rounded'>
+                    Shareable link generated!
+                  </div>
+                )}
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={handleClose}
+                  disabled={isLoading}
+                >
                   {state.generatedLink ? 'Done' : 'Cancel'}
                 </Button>
                 {!state.generatedLink && (

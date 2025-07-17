@@ -1,19 +1,20 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemberManagement } from '@/components/MemberManagement'
-import { 
-  getAlbumInvites, 
-  getShareableInvites, 
-  cancelAlbumInvite,
-  updateAlbumMemberRole,
-  removeAlbumMember 
-} from '@/lib/actions/albums'
+import { updateAlbumMemberRole, removeAlbumMember } from '@/lib/actions/albums'
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
 import { getCurrentUserRole, getUserPermissions } from '@/lib/permissions'
-import { Album, AlbumRole } from '@/types'
+import { Album, AlbumPrivacyLevel, AlbumRole } from '@/types'
+import {
+  cancelAlbumInvite,
+  getAlbumInvites,
+  getShareableInvites,
+} from '@/lib/actions/invites'
+import useSWR from 'swr'
 
 // Mock dependencies
 jest.mock('@/lib/actions/albums')
+jest.mock('@/lib/actions/invites')
 jest.mock('@/lib/hooks/useCurrentUser')
 jest.mock('@/lib/permissions')
 jest.mock('swr', () => ({
@@ -47,7 +48,7 @@ const mockAlbum: Album = {
   description: 'Test Description',
   created_by: 'creator-123',
   is_default: false,
-  privacy_level: 'private' as any,
+  privacy_level: 'private' as AlbumPrivacyLevel,
   created_at: '2024-01-01',
   updated_at: '2024-01-01',
   members: [
@@ -186,7 +187,7 @@ describe('MemberManagement', () => {
 
     it('shows message when no email invites exist', async () => {
       // Mock SWR to return empty array for invites
-      const mockSWR = require('swr').default as jest.Mock
+      const mockSWR = useSWR as jest.Mock
       mockSWR.mockImplementation((key) => {
         if (key?.includes('/invites/')) {
           return {
@@ -210,9 +211,9 @@ describe('MemberManagement', () => {
 
     it('cancels email invite when X button is clicked', async () => {
       ;(cancelAlbumInvite as jest.Mock).mockResolvedValue(undefined)
-      
+
       // Reset the SWR mock to return the default invites
-      const mockSWR = require('swr').default as jest.Mock
+      const mockSWR = useSWR as jest.Mock
       mockSWR.mockImplementation((key) => {
         if (key?.includes('/invites/')) {
           return {
@@ -235,15 +236,17 @@ describe('MemberManagement', () => {
       expect(screen.getByText('invited@example.com')).toBeInTheDocument()
 
       // Find the cancel button for email invite - X buttons with lucide-x class
-      const cancelButtons = screen.getAllByRole('button').filter(
-        button => {
-          const svg = button.querySelector('svg')
-          return svg && button.className.includes('text-red-500') && svg.classList.contains('lucide-x')
-        }
-      )
-      
+      const cancelButtons = screen.getAllByRole('button').filter((button) => {
+        const svg = button.querySelector('svg')
+        return (
+          svg &&
+          button.className.includes('text-red-500') &&
+          svg.classList.contains('lucide-x')
+        )
+      })
+
       expect(cancelButtons.length).toBeGreaterThan(0)
-      
+
       // Click the cancel button for email invite (first one)
       await user.click(cancelButtons[0])
 
@@ -293,7 +296,7 @@ describe('MemberManagement', () => {
 
     it('shows message when no shareable links exist', async () => {
       // Mock SWR to return empty array for shareable invites
-      const mockSWR = require('swr').default as jest.Mock
+      const mockSWR = useSWR as jest.Mock
       mockSWR.mockImplementation((key) => {
         if (key?.includes('/invites/')) {
           return {
@@ -317,9 +320,9 @@ describe('MemberManagement', () => {
 
     it('cancels shareable link when X button is clicked', async () => {
       ;(cancelAlbumInvite as jest.Mock).mockResolvedValue(undefined)
-      
+
       // Reset the SWR mock to return the default invites
-      const mockSWR = require('swr').default as jest.Mock
+      const mockSWR = useSWR as jest.Mock
       mockSWR.mockImplementation((key) => {
         if (key?.includes('/invites/')) {
           return {
@@ -342,16 +345,18 @@ describe('MemberManagement', () => {
       expect(screen.getAllByText('Shareable Link')).toHaveLength(2)
 
       // Find all X cancel buttons
-      const cancelButtons = screen.getAllByRole('button').filter(
-        button => {
-          const svg = button.querySelector('svg')
-          return svg && button.className.includes('text-red-500') && svg.classList.contains('lucide-x')
-        }
-      )
-      
+      const cancelButtons = screen.getAllByRole('button').filter((button) => {
+        const svg = button.querySelector('svg')
+        return (
+          svg &&
+          button.className.includes('text-red-500') &&
+          svg.classList.contains('lucide-x')
+        )
+      })
+
       // Should have 3 X buttons total (1 for email invite, 2 for shareable links)
       expect(cancelButtons.length).toBe(3)
-      
+
       // Click the cancel button for first shareable link (index 1, after email invite)
       await user.click(cancelButtons[1])
 
@@ -371,8 +376,12 @@ describe('MemberManagement', () => {
       render(<MemberManagement album={mockAlbum} onUpdate={mockOnUpdate} />)
 
       // Should not show invite sections
-      expect(screen.queryByText('Pending Email Invites')).not.toBeInTheDocument()
-      expect(screen.queryByText('Active Shareable Links')).not.toBeInTheDocument()
+      expect(
+        screen.queryByText('Pending Email Invites')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByText('Active Shareable Links')
+      ).not.toBeInTheDocument()
     })
 
     it('disables member management for non-admin users', () => {
@@ -387,14 +396,16 @@ describe('MemberManagement', () => {
 
       // Should not show role select or remove buttons
       expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-      const removeButtons = screen.queryAllByRole('button').filter(
-        button => button.querySelector('svg')
-      )
+      const removeButtons = screen
+        .queryAllByRole('button')
+        .filter((button) => button.querySelector('svg'))
       expect(removeButtons).toHaveLength(0)
     })
 
     it('allows role change for admin users', async () => {
-      ;(updateAlbumMemberRole as jest.Mock).mockResolvedValue({ role: AlbumRole.CONTRIBUTOR })
+      ;(updateAlbumMemberRole as jest.Mock).mockResolvedValue({
+        role: AlbumRole.CONTRIBUTOR,
+      })
 
       // Add a non-owner member to test role change
       const albumWithExtraMember = {
@@ -421,15 +432,20 @@ describe('MemberManagement', () => {
         ],
       }
 
-      render(<MemberManagement album={albumWithExtraMember} onUpdate={mockOnUpdate} />)
+      render(
+        <MemberManagement
+          album={albumWithExtraMember}
+          onUpdate={mockOnUpdate}
+        />
+      )
 
       // Verify that the select is rendered with correct value
       const roleSelects = screen.getAllByRole('combobox')
       expect(roleSelects.length).toBeGreaterThan(0)
-      
+
       // The component should show the current role
       expect(screen.getByText('Other User')).toBeInTheDocument()
-      
+
       // Since we can't easily test Radix UI select interactions in jsdom,
       // we'll test the handler is set up correctly by checking the component renders
       // The actual select interaction is covered by the component implementation
@@ -464,18 +480,25 @@ describe('MemberManagement', () => {
         ],
       }
 
-      render(<MemberManagement album={albumWithExtraMember} onUpdate={mockOnUpdate} />)
+      render(
+        <MemberManagement
+          album={albumWithExtraMember}
+          onUpdate={mockOnUpdate}
+        />
+      )
 
       // Find remove button for the other user - it should have UserMinus icon
-      const removeButtons = screen.getAllByRole('button').filter(
-        button => {
-          const svg = button.querySelector('svg')
-          return svg && button.className.includes('text-red-500') && svg.classList.contains('lucide-user-minus')
-        }
-      )
-      
+      const removeButtons = screen.getAllByRole('button').filter((button) => {
+        const svg = button.querySelector('svg')
+        return (
+          svg &&
+          button.className.includes('text-red-500') &&
+          svg.classList.contains('lucide-user-minus')
+        )
+      })
+
       expect(removeButtons.length).toBeGreaterThan(0)
-      
+
       // Click remove button
       await user.click(removeButtons[0])
 
@@ -483,7 +506,9 @@ describe('MemberManagement', () => {
       await waitFor(() => {
         const removeTexts = screen.getAllByText('Remove Member')
         expect(removeTexts.length).toBeGreaterThan(1) // Dialog title and button
-        expect(screen.getByText(/Are you sure you want to remove this member/)).toBeInTheDocument()
+        expect(
+          screen.getByText(/Are you sure you want to remove this member/)
+        ).toBeInTheDocument()
       })
     })
 
@@ -515,16 +540,27 @@ describe('MemberManagement', () => {
         ],
       }
 
-      render(<MemberManagement album={albumWithExtraMember} onUpdate={mockOnUpdate} />)
+      render(
+        <MemberManagement
+          album={albumWithExtraMember}
+          onUpdate={mockOnUpdate}
+        />
+      )
 
       // Click remove button
-      const removeButtons = screen.getAllByRole('button').filter(
-        button => button.querySelector('svg') && button.className.includes('text-red-500')
-      )
+      const removeButtons = screen
+        .getAllByRole('button')
+        .filter(
+          (button) =>
+            button.querySelector('svg') &&
+            button.className.includes('text-red-500')
+        )
       await user.click(removeButtons[0])
 
       // Confirm removal
-      const confirmButton = screen.getByRole('button', { name: 'Remove Member' })
+      const confirmButton = screen.getByRole('button', {
+        name: 'Remove Member',
+      })
       await user.click(confirmButton)
 
       expect(removeAlbumMember).toHaveBeenCalledWith('member-3')

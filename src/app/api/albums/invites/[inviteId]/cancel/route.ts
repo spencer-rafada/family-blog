@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cancelAlbumInvite } from '@/lib/actions/albums'
+import { cancelAlbumInvite } from '@/lib/actions/invites'
 
 export async function DELETE(
   request: NextRequest,

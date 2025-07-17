@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './useCurrentUser'
-import { acceptAlbumInvite } from '@/lib/actions/albums'
+import { acceptAlbumInvite } from '@/lib/actions/invites'
 
 export function useAutoAcceptInvite(token: string, enabled: boolean = false) {
   const { user, loading } = useCurrentUser()
@@ -29,7 +29,7 @@ export function useAutoAcceptInvite(token: string, enabled: boolean = false) {
 
     // Small delay to ensure everything is ready
     const timeoutId = setTimeout(autoAccept, 500)
-    
+
     return () => clearTimeout(timeoutId)
   }, [user, loading, token, enabled, isAccepting, router])
 

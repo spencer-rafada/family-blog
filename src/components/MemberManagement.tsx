@@ -2,13 +2,7 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import {
-  getAlbumInvites,
-  getShareableInvites,
-  cancelAlbumInvite,
-  updateAlbumMemberRole,
-  removeAlbumMember,
-} from '@/lib/actions/albums'
+import { updateAlbumMemberRole, removeAlbumMember } from '@/lib/actions/albums'
 import { Album, AlbumRole } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,9 +23,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Crown, Edit3, Eye, UserMinus, X, Clock, Mail, Link, Users } from 'lucide-react'
+import {
+  Crown,
+  Edit3,
+  Eye,
+  UserMinus,
+  X,
+  Clock,
+  Mail,
+  Link,
+  Users,
+} from 'lucide-react'
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
 import { getCurrentUserRole, getUserPermissions } from '@/lib/permissions'
+import {
+  cancelAlbumInvite,
+  getAlbumInvites,
+  getShareableInvites,
+} from '@/lib/actions/invites'
 
 interface MemberManagementProps {
   album: Album
@@ -170,15 +179,31 @@ export function MemberManagement({ album, onUpdate }: MemberManagementProps) {
                     }
                     disabled={updatingRole === member.id}
                   >
-                    <SelectTrigger className='w-24 h-8 text-xs' data-testid={`role-select-trigger-${member.id}`}>
+                    <SelectTrigger
+                      className='w-24 h-8 text-xs'
+                      data-testid={`role-select-trigger-${member.id}`}
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={AlbumRole.ADMIN} data-testid={`role-option-${member.id}-${AlbumRole.ADMIN}`}>Admin</SelectItem>
-                      <SelectItem value={AlbumRole.CONTRIBUTOR} data-testid={`role-option-${member.id}-${AlbumRole.CONTRIBUTOR}`}>
+                      <SelectItem
+                        value={AlbumRole.ADMIN}
+                        data-testid={`role-option-${member.id}-${AlbumRole.ADMIN}`}
+                      >
+                        Admin
+                      </SelectItem>
+                      <SelectItem
+                        value={AlbumRole.CONTRIBUTOR}
+                        data-testid={`role-option-${member.id}-${AlbumRole.CONTRIBUTOR}`}
+                      >
                         Contributor
                       </SelectItem>
-                      <SelectItem value={AlbumRole.VIEWER} data-testid={`role-option-${member.id}-${AlbumRole.VIEWER}`}>Viewer</SelectItem>
+                      <SelectItem
+                        value={AlbumRole.VIEWER}
+                        data-testid={`role-option-${member.id}-${AlbumRole.VIEWER}`}
+                      >
+                        Viewer
+                      </SelectItem>
                     </SelectContent>
                   </Select>
 

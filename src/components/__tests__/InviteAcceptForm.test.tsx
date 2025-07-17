@@ -2,14 +2,15 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { InviteAcceptForm } from '@/components/InviteAcceptForm'
-import { acceptAlbumInvite } from '@/lib/actions/albums'
+import { acceptAlbumInvite } from '@/lib/actions/invites'
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
 import { useAutoAcceptInvite } from '@/lib/hooks/useAutoAcceptInvite'
 import { AlbumInvite, AlbumRole } from '@/types'
+import { User } from '@supabase/supabase-js'
 
 // Mock dependencies
 jest.mock('next/navigation')
-jest.mock('@/lib/actions/albums')
+jest.mock('@/lib/actions/invites')
 jest.mock('@/lib/hooks/useCurrentUser')
 jest.mock('@/lib/hooks/useAutoAcceptInvite')
 
@@ -18,7 +19,7 @@ const mockSearchParams = new URLSearchParams()
 
 describe('InviteAcceptForm', () => {
   const user = userEvent.setup()
-  
+
   const mockEmailInvite: AlbumInvite = {
     id: 'invite-123',
     album_id: 'album-123',
@@ -43,15 +44,15 @@ describe('InviteAcceptForm', () => {
   const mockUser = {
     id: 'user-123',
     email: 'test@example.com',
-  }
+  } as User
 
   beforeEach(() => {
     jest.clearAllMocks()
     ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
     ;(useSearchParams as jest.Mock).mockReturnValue(mockSearchParams)
-    ;(useAutoAcceptInvite as jest.Mock).mockReturnValue({ 
-      isAccepting: false, 
-      error: null 
+    ;(useAutoAcceptInvite as jest.Mock).mockReturnValue({
+      isAccepting: false,
+      error: null,
     })
   })
 
@@ -63,25 +64,31 @@ describe('InviteAcceptForm', () => {
 
       it('shows sign in/up options with email requirement', () => {
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockEmailInvite} 
-            initialUser={null} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockEmailInvite}
+            initialUser={null}
           />
         )
 
-        expect(screen.getByText(/sign in or create an account with/)).toBeInTheDocument()
+        expect(
+          screen.getByText(/sign in or create an account with/)
+        ).toBeInTheDocument()
         expect(screen.getByText('test@example.com')).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: 'Sign Up' })).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument()
+        expect(
+          screen.getByRole('button', { name: 'Sign Up' })
+        ).toBeInTheDocument()
+        expect(
+          screen.getByRole('button', { name: 'Sign In' })
+        ).toBeInTheDocument()
       })
 
       it('redirects to signup with email parameter', async () => {
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockEmailInvite} 
-            initialUser={null} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockEmailInvite}
+            initialUser={null}
           />
         )
 
@@ -95,10 +102,10 @@ describe('InviteAcceptForm', () => {
 
       it('redirects to login with token', async () => {
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockEmailInvite} 
-            initialUser={null} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockEmailInvite}
+            initialUser={null}
           />
         )
 
@@ -116,15 +123,19 @@ describe('InviteAcceptForm', () => {
 
       it('shows accept/decline options', () => {
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockEmailInvite} 
-            initialUser={mockUser as any} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockEmailInvite}
+            initialUser={mockUser}
           />
         )
 
-        expect(screen.getByRole('button', { name: 'Accept Invitation' })).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument()
+        expect(
+          screen.getByRole('button', { name: 'Accept Invitation' })
+        ).toBeInTheDocument()
+        expect(
+          screen.getByRole('button', { name: 'Decline' })
+        ).toBeInTheDocument()
         expect(screen.getByText("You're signed in as")).toBeInTheDocument()
         expect(screen.getByText('test@example.com')).toBeInTheDocument()
       })
@@ -133,18 +144,20 @@ describe('InviteAcceptForm', () => {
         ;(acceptAlbumInvite as jest.Mock).mockResolvedValueOnce('album-123')
 
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockEmailInvite} 
-            initialUser={mockUser as any} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockEmailInvite}
+            initialUser={mockUser}
           />
         )
 
-        const acceptButton = screen.getByRole('button', { name: 'Accept Invitation' })
+        const acceptButton = screen.getByRole('button', {
+          name: 'Accept Invitation',
+        })
         await user.click(acceptButton)
 
         expect(acceptAlbumInvite).toHaveBeenCalledWith('test-token')
-        
+
         await waitFor(() => {
           expect(mockPush).toHaveBeenCalledWith('/albums/album-123')
         })
@@ -156,18 +169,22 @@ describe('InviteAcceptForm', () => {
         )
 
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockEmailInvite} 
-            initialUser={mockUser as any} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockEmailInvite}
+            initialUser={mockUser}
           />
         )
 
-        const acceptButton = screen.getByRole('button', { name: 'Accept Invitation' })
+        const acceptButton = screen.getByRole('button', {
+          name: 'Accept Invitation',
+        })
         await user.click(acceptButton)
 
         await waitFor(() => {
-          expect(screen.getByText('This invite is for a different email address')).toBeInTheDocument()
+          expect(
+            screen.getByText('This invite is for a different email address')
+          ).toBeInTheDocument()
         })
       })
     })
@@ -181,24 +198,28 @@ describe('InviteAcceptForm', () => {
 
       it('shows generic sign in/up message without email requirement', () => {
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockShareableInvite} 
-            initialUser={null} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockShareableInvite}
+            initialUser={null}
           />
         )
 
-        expect(screen.getByText('To accept this invitation, you need to sign in or create an account.')).toBeInTheDocument()
+        expect(
+          screen.getByText(
+            'To accept this invitation, you need to sign in or create an account.'
+          )
+        ).toBeInTheDocument()
         // Should not show specific email requirement
         expect(screen.queryByText('test@example.com')).not.toBeInTheDocument()
       })
 
       it('redirects to signup without email parameter', async () => {
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockShareableInvite} 
-            initialUser={null} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockShareableInvite}
+            initialUser={null}
           />
         )
 
@@ -216,33 +237,37 @@ describe('InviteAcceptForm', () => {
 
       it('does not show email for shareable invites', () => {
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockShareableInvite} 
-            initialUser={mockUser as any} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockShareableInvite}
+            initialUser={mockUser}
           />
         )
 
         // Should not show "You're signed in as" message for shareable invites
-        expect(screen.queryByText("You're signed in as")).not.toBeInTheDocument()
+        expect(
+          screen.queryByText("You're signed in as")
+        ).not.toBeInTheDocument()
       })
 
       it('accepts shareable invitation successfully', async () => {
         ;(acceptAlbumInvite as jest.Mock).mockResolvedValueOnce('album-123')
 
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockShareableInvite} 
-            initialUser={mockUser as any} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockShareableInvite}
+            initialUser={mockUser}
           />
         )
 
-        const acceptButton = screen.getByRole('button', { name: 'Accept Invitation' })
+        const acceptButton = screen.getByRole('button', {
+          name: 'Accept Invitation',
+        })
         await user.click(acceptButton)
 
         expect(acceptAlbumInvite).toHaveBeenCalledWith('test-token')
-        
+
         await waitFor(() => {
           expect(mockPush).toHaveBeenCalledWith('/albums/album-123')
         })
@@ -254,18 +279,24 @@ describe('InviteAcceptForm', () => {
         )
 
         render(
-          <InviteAcceptForm 
-            token="test-token" 
-            invite={mockShareableInvite} 
-            initialUser={mockUser as any} 
+          <InviteAcceptForm
+            token='test-token'
+            invite={mockShareableInvite}
+            initialUser={mockUser}
           />
         )
 
-        const acceptButton = screen.getByRole('button', { name: 'Accept Invitation' })
+        const acceptButton = screen.getByRole('button', {
+          name: 'Accept Invitation',
+        })
         await user.click(acceptButton)
 
         await waitFor(() => {
-          expect(screen.getByText('This invite link has reached its maximum number of uses')).toBeInTheDocument()
+          expect(
+            screen.getByText(
+              'This invite link has reached its maximum number of uses'
+            )
+          ).toBeInTheDocument()
         })
       })
     })
@@ -275,40 +306,42 @@ describe('InviteAcceptForm', () => {
     it('shows auto-accepting state when redirected from auth', () => {
       ;(useCurrentUser as jest.Mock).mockReturnValue({ user: mockUser })
       ;(useSearchParams as jest.Mock).mockReturnValue({
-        get: (key: string) => key === 'redirected' ? 'true' : null
+        get: (key: string) => (key === 'redirected' ? 'true' : null),
       })
-      ;(useAutoAcceptInvite as jest.Mock).mockReturnValue({ 
-        isAccepting: true, 
-        error: null 
+      ;(useAutoAcceptInvite as jest.Mock).mockReturnValue({
+        isAccepting: true,
+        error: null,
       })
 
       render(
-        <InviteAcceptForm 
-          token="test-token" 
-          invite={mockEmailInvite} 
-          initialUser={mockUser as any} 
+        <InviteAcceptForm
+          token='test-token'
+          invite={mockEmailInvite}
+          initialUser={mockUser}
         />
       )
 
-      expect(screen.getByText('Welcome back! Accepting your invitation...')).toBeInTheDocument()
+      expect(
+        screen.getByText('Welcome back! Accepting your invitation...')
+      ).toBeInTheDocument()
       expect(screen.getByText('Accepting Invitation...')).toBeInTheDocument()
     })
 
     it('shows error from auto-accept', () => {
       ;(useCurrentUser as jest.Mock).mockReturnValue({ user: mockUser })
       ;(useSearchParams as jest.Mock).mockReturnValue({
-        get: (key: string) => key === 'redirected' ? 'true' : null
+        get: (key: string) => (key === 'redirected' ? 'true' : null),
       })
-      ;(useAutoAcceptInvite as jest.Mock).mockReturnValue({ 
-        isAccepting: false, 
-        error: 'Already a member' 
+      ;(useAutoAcceptInvite as jest.Mock).mockReturnValue({
+        isAccepting: false,
+        error: 'Already a member',
       })
 
       render(
-        <InviteAcceptForm 
-          token="test-token" 
-          invite={mockEmailInvite} 
-          initialUser={mockUser as any} 
+        <InviteAcceptForm
+          token='test-token'
+          invite={mockEmailInvite}
+          initialUser={mockUser}
         />
       )
 
@@ -321,10 +354,10 @@ describe('InviteAcceptForm', () => {
       ;(useCurrentUser as jest.Mock).mockReturnValue({ user: mockUser })
 
       render(
-        <InviteAcceptForm 
-          token="test-token" 
-          invite={mockEmailInvite} 
-          initialUser={mockUser as any} 
+        <InviteAcceptForm
+          token='test-token'
+          invite={mockEmailInvite}
+          initialUser={mockUser}
         />
       )
 
@@ -338,14 +371,16 @@ describe('InviteAcceptForm', () => {
       ;(useCurrentUser as jest.Mock).mockReturnValue({ user: null })
 
       render(
-        <InviteAcceptForm 
-          token="test-token" 
-          invite={mockEmailInvite} 
-          initialUser={null} 
+        <InviteAcceptForm
+          token='test-token'
+          invite={mockEmailInvite}
+          initialUser={null}
         />
       )
 
-      const maybeLaterButton = screen.getByRole('button', { name: 'Maybe Later' })
+      const maybeLaterButton = screen.getByRole('button', {
+        name: 'Maybe Later',
+      })
       await user.click(maybeLaterButton)
 
       expect(mockPush).toHaveBeenCalledWith('/')
