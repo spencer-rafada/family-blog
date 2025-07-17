@@ -59,7 +59,11 @@ export function InviteAcceptForm({ token, invite, initialUser }: InviteAcceptFor
   }
 
   const handleSignUp = () => {
-    router.push(`/signup?invite_token=${token}&email=${encodeURIComponent(invite.email)}`)
+    if (invite.is_shareable) {
+      router.push(`/signup?invite_token=${token}`)
+    } else {
+      router.push(`/signup?invite_token=${token}&email=${encodeURIComponent(invite.email)}`)
+    }
   }
 
   if (!currentUser) {
@@ -67,8 +71,14 @@ export function InviteAcceptForm({ token, invite, initialUser }: InviteAcceptFor
       <div className="space-y-4">
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <p className="text-sm text-blue-800">
-            To accept this invitation, you need to sign in or create an account with{' '}
-            <strong>{invite.email}</strong>
+            {invite.is_shareable ? (
+              <>To accept this invitation, you need to sign in or create an account.</>
+            ) : (
+              <>
+                To accept this invitation, you need to sign in or create an account with{' '}
+                <strong>{invite.email}</strong>
+              </>
+            )}
           </p>
         </div>
 
@@ -141,9 +151,11 @@ export function InviteAcceptForm({ token, invite, initialUser }: InviteAcceptFor
         </Button>
       </div>
 
-      <p className="text-xs text-gray-500 text-center">
-        You&apos;re signed in as <strong>{currentUser.email}</strong>
-      </p>
+      {!invite.is_shareable && (
+        <p className="text-xs text-gray-500 text-center">
+          You&apos;re signed in as <strong>{currentUser.email}</strong>
+        </p>
+      )}
     </div>
   )
 }

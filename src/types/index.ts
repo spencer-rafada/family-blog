@@ -69,6 +69,9 @@ export interface AlbumInvite {
   expires_at: string
   used_at: string | null
   created_at: string
+  is_shareable?: boolean
+  max_uses?: number | null
+  uses_count?: number
   album?: Album
   inviter?: Profile
 }

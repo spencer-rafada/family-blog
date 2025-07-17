@@ -4,6 +4,7 @@ import { useState } from 'react'
 import useSWR from 'swr'
 import {
   getAlbumInvites,
+  getShareableInvites,
   cancelAlbumInvite,
   updateAlbumMemberRole,
   removeAlbumMember,
@@ -28,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Crown, Edit3, Eye, UserMinus, X, Clock, Mail } from 'lucide-react'
+import { Crown, Edit3, Eye, UserMinus, X, Clock, Mail, Link, Users } from 'lucide-react'
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
 import { getCurrentUserRole, getUserPermissions } from '@/lib/permissions'
 
@@ -51,6 +52,12 @@ export function MemberManagement({ album, onUpdate }: MemberManagementProps) {
   const { data: invites, mutate: mutateInvites } = useSWR(
     permissions.canManageMembers ? `/invites/${album.id}` : null,
     () => getAlbumInvites(album.id)
+  )
+
+  // Fetch shareable invites
+  const { data: shareableInvites, mutate: mutateShareableInvites } = useSWR(
+    permissions.canManageMembers ? `/shareable-invites/${album.id}` : null,
+    () => getShareableInvites(album.id)
   )
 
   const handleRoleChange = async (memberId: string, newRole: AlbumRole) => {
@@ -79,11 +86,15 @@ export function MemberManagement({ album, onUpdate }: MemberManagementProps) {
     }
   }
 
-  const handleCancelInvite = async (inviteId: string) => {
+  const handleCancelInvite = async (inviteId: string, isShareable = false) => {
     setCancelingInvite(inviteId)
     try {
       await cancelAlbumInvite(inviteId)
-      mutateInvites()
+      if (isShareable) {
+        mutateShareableInvites()
+      } else {
+        mutateInvites()
+      }
     } catch (error) {
       console.error('Failed to cancel invite:', error)
     } finally {
@@ -159,15 +170,15 @@ export function MemberManagement({ album, onUpdate }: MemberManagementProps) {
                     }
                     disabled={updatingRole === member.id}
                   >
-                    <SelectTrigger className='w-24 h-8 text-xs'>
+                    <SelectTrigger className='w-24 h-8 text-xs' data-testid={`role-select-trigger-${member.id}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={AlbumRole.ADMIN}>Admin</SelectItem>
-                      <SelectItem value={AlbumRole.CONTRIBUTOR}>
+                      <SelectItem value={AlbumRole.ADMIN} data-testid={`role-option-${member.id}-${AlbumRole.ADMIN}`}>Admin</SelectItem>
+                      <SelectItem value={AlbumRole.CONTRIBUTOR} data-testid={`role-option-${member.id}-${AlbumRole.CONTRIBUTOR}`}>
                         Contributor
                       </SelectItem>
-                      <SelectItem value={AlbumRole.VIEWER}>Viewer</SelectItem>
+                      <SelectItem value={AlbumRole.VIEWER} data-testid={`role-option-${member.id}-${AlbumRole.VIEWER}`}>Viewer</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -188,13 +199,13 @@ export function MemberManagement({ album, onUpdate }: MemberManagementProps) {
         )}
       </div>
 
-      {/* Pending Invites */}
+      {/* Pending Email Invites */}
       {permissions.canManageMembers && (
         <>
           <Separator />
           <div className='space-y-3'>
             <h4 className='font-medium text-sm text-gray-700'>
-              Pending Invites
+              Pending Email Invites
             </h4>
             {invites && invites.length > 0 ? (
               invites.map((invite) => (
@@ -236,7 +247,63 @@ export function MemberManagement({ album, onUpdate }: MemberManagementProps) {
                 </div>
               ))
             ) : (
-              <p className='text-sm text-gray-500'>No pending invites</p>
+              <p className='text-sm text-gray-500'>No pending email invites</p>
+            )}
+          </div>
+
+          {/* Shareable Links */}
+          <Separator />
+          <div className='space-y-3'>
+            <h4 className='font-medium text-sm text-gray-700'>
+              Active Shareable Links
+            </h4>
+            {shareableInvites && shareableInvites.length > 0 ? (
+              shareableInvites.map((invite) => (
+                <div
+                  key={invite.id}
+                  className='flex items-center justify-between'
+                >
+                  <div className='flex items-center gap-3'>
+                    <div className='w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center'>
+                      <Link className='w-4 h-4 text-blue-600' />
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex items-center gap-2'>
+                        <p className='text-sm font-medium text-gray-900'>
+                          Shareable Link
+                        </p>
+                        <Badge variant='outline' className='text-xs'>
+                          <Users className='w-3 h-3 mr-1' />
+                          {invite.uses_count}/{invite.max_uses || '∞'}
+                        </Badge>
+                      </div>
+                      <div className='flex items-center gap-2 text-xs text-gray-500'>
+                        <Clock className='w-3 h-3' />
+                        <span>
+                          Created by {invite.inviter?.full_name || 'Unknown'}
+                        </span>
+                        <span>•</span>
+                        <div className='flex items-center gap-1'>
+                          {getRoleIcon(invite.role)}
+                          <span className='capitalize'>{invite.role}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => handleCancelInvite(invite.id, true)}
+                    disabled={cancelingInvite === invite.id}
+                    className='h-8 w-8 p-0 text-red-500 hover:text-red-700'
+                  >
+                    <X className='w-3 h-3' />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <p className='text-sm text-gray-500'>No active shareable links</p>
             )}
           </div>
         </>

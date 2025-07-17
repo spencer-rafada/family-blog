@@ -16,6 +16,7 @@ describe('createAlbumInvite', () => {
     from: jest.Mock
     select: jest.Mock
     eq: jest.Mock
+    is: jest.Mock
     insert: jest.Mock
     single: jest.Mock
   }
@@ -33,6 +34,7 @@ describe('createAlbumInvite', () => {
       from: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
+      is: jest.fn().mockReturnThis(),
       insert: jest.fn().mockReturnThis(),
       single: jest.fn(),
     }
@@ -80,7 +82,7 @@ describe('createAlbumInvite', () => {
       // Verify the queries were made
       expect(mockSupabase.from).toHaveBeenCalledWith('album_invites')
       expect(mockSupabase.eq).toHaveBeenCalledWith('email', 'newuser@example.com')
-      expect(mockSupabase.eq).toHaveBeenCalledWith('status', 'pending')
+      expect(mockSupabase.is).toHaveBeenCalledWith('used_at', null)
     })
   })
 

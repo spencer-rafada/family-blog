@@ -83,12 +83,3 @@ export async function sendAlbumInviteEmail({
     throw error
   }
 }
-
-export function getInviteAcceptUrl(token: string): string {
-  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'https://family-blog-eta.vercel.app/' // Your production domain as fallback
-  return `${baseUrl}/invite/accept/${token}`
-}

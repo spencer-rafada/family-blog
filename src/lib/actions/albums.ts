@@ -330,7 +330,7 @@ export async function createAlbumInvite(
     .select('id')
     .eq('album_id', albumId)
     .eq('email', normalizedEmail)
-    .eq('status', 'pending')
+    .is('used_at', null)  // NULL means pending
     .single()
 
   // Handle invite lookup error (ignore not found errors)
@@ -379,9 +379,8 @@ export async function createAlbumInvite(
 
   // Send invitation email
   try {
-    const { sendAlbumInviteEmail, getInviteAcceptUrl } = await import(
-      '@/lib/email'
-    )
+    const { sendAlbumInviteEmail } = await import('@/lib/email')
+    const { getInviteAcceptUrl } = await import('@/lib/invite-utils')
 
     await sendAlbumInviteEmail({
       to: invite.email,
@@ -396,6 +395,101 @@ export async function createAlbumInvite(
   }
 
   return invite
+}
+
+export async function createShareableInvite(
+  albumId: string,
+  role: AlbumRole,
+  maxUses?: number
+): Promise<AlbumInvite> {
+  const user = await requireAuth()
+  const supabase = await createClient()
+
+  // Check if user has permission to invite
+  const { data: membership, error: membershipError } = await supabase
+    .from('album_members')
+    .select('role')
+    .eq('album_id', albumId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membershipError || !membership) {
+    throw new Error('You do not have access to this album')
+  }
+
+  // Only admins can invite
+  if (membership.role !== AlbumRole.ADMIN) {
+    throw new Error('Only album admins can create invites')
+  }
+
+  // Generate invite token
+  const token = crypto.randomUUID()
+  const expiresAt = new Date()
+  expiresAt.setDate(expiresAt.getDate() + 30) // Shareable links expire in 30 days
+
+  const { data: invite, error } = await supabase
+    .from('album_invites')
+    .insert({
+      album_id: albumId,
+      email: '', // Empty email for shareable invites
+      invited_by: user.id,
+      role: role,
+      token: token,
+      expires_at: expiresAt.toISOString(),
+      is_shareable: true,
+      max_uses: maxUses || null, // null means unlimited
+      uses_count: 0,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error(`Failed to create shareable invite: ${error.message}`)
+  }
+
+  return invite
+}
+
+export async function getShareableInvites(albumId: string): Promise<AlbumInvite[]> {
+  const user = await requireAuth()
+  const supabase = await createClient()
+
+  // Check if user has permission to view invites
+  const { data: membership, error: membershipError } = await supabase
+    .from('album_members')
+    .select('role')
+    .eq('album_id', albumId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membershipError || !membership) {
+    throw new Error('You do not have access to this album')
+  }
+
+  // Only admins can view invites
+  if (membership.role !== AlbumRole.ADMIN) {
+    throw new Error('Only album admins can view invites')
+  }
+
+  const { data: invites, error } = await supabase
+    .from('album_invites')
+    .select(
+      `
+      *,
+      inviter:profiles!album_invites_invited_by_fkey(full_name)
+    `
+    )
+    .eq('album_id', albumId)
+    .eq('is_shareable', true)
+    .is('used_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Failed to fetch shareable invites: ${error.message}`)
+  }
+
+  return invites || []
 }
 
 export async function getInviteDetails(token: string) {
@@ -439,15 +533,34 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
     throw new Error('Invalid or expired invite')
   }
 
-  // Check if user email matches invite
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('email')
-    .eq('id', user.id)
-    .single()
+  // For shareable invites, check if max uses has been reached
+  if (invite.is_shareable) {
+    if (invite.max_uses && invite.uses_count >= invite.max_uses) {
+      throw new Error('This invite link has reached its maximum number of uses')
+    }
 
-  if (!profile || profile.email !== invite.email) {
-    throw new Error('This invite is for a different email address')
+    // Check if user is already a member
+    const { data: existingMember } = await supabase
+      .from('album_members')
+      .select('id')
+      .eq('album_id', invite.album_id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (existingMember) {
+      throw new Error('You are already a member of this album')
+    }
+  } else {
+    // For email invites, check if user email matches invite
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.email !== invite.email) {
+      throw new Error('This invite is for a different email address')
+    }
   }
 
   // Add user as album member
@@ -461,17 +574,25 @@ export async function acceptAlbumInvite(token: string): Promise<string> {
     throw new Error(`Failed to join album: ${memberError.message}`)
   }
 
-  // Mark invite as used using RPC function to bypass RLS
-  const { error: updateError } = await supabase.rpc('mark_invite_as_used', {
-    invite_token: invite.token,
-    user_email: invite.email,
-  })
+  // For shareable invites, increment uses count
+  if (invite.is_shareable) {
+    const { error: incrementError } = await supabase.rpc('increment_invite_uses_count', {
+      invite_token: invite.token,
+    })
 
-  if (updateError) {
-    console.error('Error marking invite as used:', updateError)
-    // Don't throw error for used_at update failure - the user is already added to album
+    if (incrementError) {
+      console.error('Error incrementing invite uses count:', incrementError)
+    }
   } else {
-    console.log('Successfully marked invite as used')
+    // For email invites, mark as used
+    const { error: updateError } = await supabase.rpc('mark_invite_as_used', {
+      invite_token: invite.token,
+      user_email: invite.email,
+    })
+
+    if (updateError) {
+      console.error('Error marking invite as used:', updateError)
+    }
   }
 
   return invite.album_id
@@ -550,6 +671,7 @@ export async function getAlbumInvites(albumId: string): Promise<AlbumInvite[]> {
     `
     )
     .eq('album_id', albumId)
+    .eq('is_shareable', false)  // Only get email-based invites
     .is('used_at', null)
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
