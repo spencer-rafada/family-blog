@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
   const inviteToken = searchParams.get('invite_token')
+  const type = searchParams.get('type')
 
   if (code) {
     const supabase = await createClient()
@@ -16,7 +17,10 @@ export async function GET(request: NextRequest) {
       // Create the redirect URL based on context
       let redirectUrl: string
       
-      if (inviteToken) {
+      if (type === 'recovery') {
+        // Password reset flow
+        redirectUrl = `${origin}/reset-password`
+      } else if (inviteToken) {
         redirectUrl = `${origin}/invite/accept/${inviteToken}?redirected=true`
       } else {
         redirectUrl = `${origin}${next}`

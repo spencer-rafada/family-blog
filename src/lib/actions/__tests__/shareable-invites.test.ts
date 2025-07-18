@@ -1,4 +1,4 @@
-import { createShareableInvite, getShareableInvites, acceptAlbumInvite } from '../albums'
+import { createShareableInvite, getShareableInvites, acceptAlbumInvite } from '../invites'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth-utils'
 import { AlbumRole } from '@/types'
@@ -16,6 +16,8 @@ describe('createShareableInvite', () => {
     from: jest.Mock
     select: jest.Mock
     eq: jest.Mock
+    is: jest.Mock
+    gt: jest.Mock
     insert: jest.Mock
     single: jest.Mock
   }
@@ -33,6 +35,8 @@ describe('createShareableInvite', () => {
       from: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
+      is: jest.fn().mockReturnThis(),
+      gt: jest.fn().mockReturnThis(),
       insert: jest.fn().mockReturnThis(),
       single: jest.fn(),
     }

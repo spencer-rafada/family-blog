@@ -2,11 +2,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import { InviteModal } from '@/components/InviteModal'
-import { createAlbumInvite, createShareableInvite } from '@/lib/actions/albums'
+import { createAlbumInvite, createShareableInvite } from '@/lib/actions/invites'
 import { AlbumRole } from '@/types'
 
 // Mock dependencies
-jest.mock('@/lib/actions/albums', () => ({
+jest.mock('@/lib/actions/invites', () => ({
   createAlbumInvite: jest.fn(),
   createShareableInvite: jest.fn(),
 }))

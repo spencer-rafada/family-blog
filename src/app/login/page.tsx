@@ -12,12 +12,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const redirectTo = Array.isArray(params.redirectTo) 
     ? params.redirectTo[0] 
     : params.redirectTo
+  const message = Array.isArray(params.message)
+    ? params.message[0]
+    : params.message
 
   return (
     <LoginForm 
       inviteToken={inviteToken} 
       redirectTo={redirectTo}
       isInviteContext={!!inviteToken}
+      message={message}
     />
   )
 }
