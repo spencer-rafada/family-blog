@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getInviteDetails } from '@/lib/actions/albums'
+import { getInviteDetails } from '@/lib/actions/invites'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { InviteAcceptForm } from '@/components/InviteAcceptForm'
 import {
@@ -44,22 +44,43 @@ export default async function InviteAcceptPage({
             <CardContent>
               <div className='text-sm text-gray-600'>
                 <p>
-                  <strong>{invite.inviter?.full_name || 'Someone'}</strong>{' '}
-                  invited you as a{' '}
-                  <strong className='capitalize'>{invite.role}</strong>
+                  {invite.is_shareable ? (
+                    <>
+                      This is a shareable invitation link created by{' '}
+                      <strong>{invite.inviter?.full_name || 'Someone'}</strong>{' '}
+                      for the role of{' '}
+                      <strong className='capitalize'>{invite.role}</strong>
+                    </>
+                  ) : (
+                    <>
+                      <strong>{invite.inviter?.full_name || 'Someone'}</strong>{' '}
+                      invited you as a{' '}
+                      <strong className='capitalize'>{invite.role}</strong>
+                    </>
+                  )}
                 </p>
 
                 <div className='mt-2 text-xs'>
                   {invite.role === 'admin' && (
-                    <p>You&apos;ll be able to manage the album and invite others.</p>
+                    <p>
+                      You&apos;ll be able to manage the album and invite others.
+                    </p>
                   )}
                   {invite.role === 'contributor' && (
                     <p>
-                      You&apos;ll be able to add posts and memories to this album.
+                      You&apos;ll be able to add posts and memories to this
+                      album.
                     </p>
                   )}
                   {invite.role === 'viewer' && (
                     <p>You&apos;ll be able to view content in this album.</p>
+                  )}
+
+                  {invite.is_shareable && invite.max_uses && (
+                    <p className='mt-2 text-gray-500'>
+                      This link has been used {invite.uses_count} out of{' '}
+                      {invite.max_uses} times.
+                    </p>
                   )}
                 </div>
               </div>

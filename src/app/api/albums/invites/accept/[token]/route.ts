@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { acceptAlbumInvite } from '@/lib/actions/albums'
+import { acceptAlbumInvite } from '@/lib/actions/invites'
 
 export async function POST(
   request: NextRequest,
