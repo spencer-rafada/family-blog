@@ -1,4 +1,4 @@
-import { createAlbumInvite } from '../albums'
+import { createAlbumInvite } from '../invites'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth-utils'
 import { AlbumRole } from '@/types'
