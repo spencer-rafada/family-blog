@@ -11,14 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { updatePassword } from '@/lib/actions/auth'
-
-const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-})
+import { resetPasswordSchema } from '@/lib/validations/auth'
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
 

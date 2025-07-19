@@ -11,10 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { requestPasswordReset } from '@/lib/actions/auth'
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-})
+import { forgotPasswordSchema } from '@/lib/validations/auth'
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 
@@ -111,6 +108,14 @@ export function ForgotPasswordForm() {
               <Alert variant="destructive">
                 <AlertDescription>
                   The password reset link is invalid or has expired. Please request a new one.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {urlError === 'session-expired' && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Your session has expired. Please request a new password reset link.
                 </AlertDescription>
               </Alert>
             )}
