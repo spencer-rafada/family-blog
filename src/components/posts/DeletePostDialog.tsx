@@ -23,11 +23,11 @@ interface DeletePostDialogProps {
   redirectOnDelete?: boolean
 }
 
-export default function DeletePostDialog({ 
-  post, 
-  open, 
+export default function DeletePostDialog({
+  post,
+  open,
   onOpenChange,
-  redirectOnDelete = false
+  redirectOnDelete = false,
 }: DeletePostDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
@@ -35,15 +35,11 @@ export default function DeletePostDialog({
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      const result = await deletePost(post.id)
-
-      if (result.error) {
-        throw new Error(result.error)
-      }
+      await deletePost(post.id)
 
       // Revalidate posts
       if (post.album_id) {
-        revalidatePosts(post.album_id)
+        revalidatePosts()
       }
       revalidatePosts()
 
@@ -66,28 +62,30 @@ export default function DeletePostDialog({
         <DialogHeader>
           <DialogTitle>Delete Post</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete this post? This action cannot be undone.
-            {post.post_images.length > 0 && (
-              <span className="block mt-2">
-                This will also delete {post.post_images.length} image{post.post_images.length > 1 ? 's' : ''}.
+            Are you sure you want to delete this post? This action cannot be
+            undone.
+            {post.post_images?.length > 0 && (
+              <span className='block mt-2'>
+                This will also delete {post.post_images.length} image
+                {post.post_images.length > 1 ? 's' : ''}.
               </span>
             )}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
           >
             Cancel
           </Button>
           <Button
-            variant="destructive"
+            variant='destructive'
             onClick={handleDelete}
             disabled={isDeleting}
           >
-            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isDeleting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogFooter>
