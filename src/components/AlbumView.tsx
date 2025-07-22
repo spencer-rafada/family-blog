@@ -220,7 +220,7 @@ export default function AlbumView({ albumId }: AlbumViewProps) {
             <ImageIcon className='w-5 h-5' />
             Album Posts
           </h2>
-          <AlbumPostFeed albumId={albumId} />
+          <AlbumPostFeed albumId={albumId} userRole={userRole} />
         </div>
       </div>
 

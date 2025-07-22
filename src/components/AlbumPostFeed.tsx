@@ -7,7 +7,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Plus, ImageIcon } from 'lucide-react'
+import { Plus, ImageIcon, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
+import EditPostDialog from './posts/EditPostDialog'
+import DeletePostDialog from './posts/DeletePostDialog'
 import { formatDistanceToNow } from 'date-fns'
 import PostSkeleton from './PostSkeleton'
 import PostComments from './PostComments'
@@ -20,12 +30,17 @@ import type { Post } from '@/types'
 
 interface AlbumPostFeedProps {
   albumId: string
+  userRole?: string | null
 }
 
-export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
+type DialogState = { type: 'edit' | 'delete'; post: Post } | null
+
+export default function AlbumPostFeed({ albumId, userRole }: AlbumPostFeedProps) {
+  const { user } = useCurrentUser()
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<Post['post_images']>([])
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [dialogState, setDialogState] = useState<DialogState>(null)
 
   const {
     data: posts,
@@ -109,11 +124,45 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
                   </p>
                 </div>
               </div>
-              {post.milestone_type && (
-                <Badge variant='secondary' className='self-start sm:self-auto'>
-                  {MILESTONE_LABELS[post.milestone_type]}
-                </Badge>
-              )}
+              <div className='flex items-center gap-2'>
+                {post.milestone_type && (
+                  <Badge variant='secondary' className='self-start sm:self-auto'>
+                    {MILESTONE_LABELS[post.milestone_type]}
+                  </Badge>
+                )}
+                {user && userRole !== 'viewer' && (post.author_id === user.id || userRole === 'admin') && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        data-testid={`post-dropdown-${post.id}`}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {post.author_id === user.id && (
+                        <>
+                          <DropdownMenuItem onClick={() => setDialogState({ type: 'edit', post })}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Post
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      <DropdownMenuItem 
+                        onClick={() => setDialogState({ type: 'delete', post })}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Post
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
             {post.title && (
               <h3 className='font-semibold text-base sm:text-lg mt-2'>{post.title}</h3>
@@ -152,6 +201,24 @@ export default function AlbumPostFeed({ albumId }: AlbumPostFeedProps) {
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}
       />
+
+      {/* Edit Post Dialog */}
+      {dialogState?.type === 'edit' && (
+        <EditPostDialog
+          post={dialogState.post}
+          open={true}
+          onOpenChange={(open) => !open && setDialogState(null)}
+        />
+      )}
+
+      {/* Delete Post Dialog */}
+      {dialogState?.type === 'delete' && (
+        <DeletePostDialog
+          post={dialogState.post}
+          open={true}
+          onOpenChange={(open) => !open && setDialogState(null)}
+        />
+      )}
     </div>
   )
 }

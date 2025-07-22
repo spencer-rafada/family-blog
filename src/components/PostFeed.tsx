@@ -15,12 +15,27 @@ import ImageLightbox from './posts/ImageLightbox'
 import { fetcher } from '@/lib/fetcher'
 import { SWRKeys, MILESTONE_LABELS } from '@/lib/constants'
 import type { Post } from '@/types'
-import { Users } from 'lucide-react'
+import { Users, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
+import EditPostDialog from './posts/EditPostDialog'
+import DeletePostDialog from './posts/DeletePostDialog'
+
+type DialogState = { type: 'edit' | 'delete'; post: Post } | null
 
 export default function PostFeed() {
+  const { user } = useCurrentUser()
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<Post['post_images']>([])
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [dialogState, setDialogState] = useState<DialogState>(null)
 
   const {
     data: posts,
@@ -91,11 +106,40 @@ export default function PostFeed() {
                   </p>
                 </div>
               </div>
-              {post.milestone_type && (
-                <Badge variant='secondary'>
-                  {MILESTONE_LABELS[post.milestone_type]}
-                </Badge>
-              )}
+              <div className='flex items-center gap-2'>
+                {post.milestone_type && (
+                  <Badge variant='secondary'>
+                    {MILESTONE_LABELS[post.milestone_type]}
+                  </Badge>
+                )}
+                {user && post.author_id === user.id && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setDialogState({ type: 'edit', post })}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Post
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => setDialogState({ type: 'delete', post })}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Post
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
             {post.title && (
               <h3 className='font-semibold text-lg mt-2'>{post.title}</h3>
@@ -145,6 +189,24 @@ export default function PostFeed() {
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}
       />
+
+      {/* Edit Post Dialog */}
+      {dialogState?.type === 'edit' && (
+        <EditPostDialog
+          post={dialogState.post}
+          open={true}
+          onOpenChange={(open) => !open && setDialogState(null)}
+        />
+      )}
+
+      {/* Delete Post Dialog */}
+      {dialogState?.type === 'delete' && (
+        <DeletePostDialog
+          post={dialogState.post}
+          open={true}
+          onOpenChange={(open) => !open && setDialogState(null)}
+        />
+      )}
     </div>
   )
 }

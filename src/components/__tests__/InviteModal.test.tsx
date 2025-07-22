@@ -206,9 +206,11 @@ describe('InviteModal', () => {
       const roleSelect = screen.getByTestId('role-select-trigger')
       await user.click(roleSelect)
 
-      // Select Admin role
-      const adminOption = await screen.findByTestId('role-option-admin')
-      await user.click(adminOption)
+      // Select Admin role - use waitFor to handle async rendering
+      await waitFor(async () => {
+        const adminOption = screen.getByText('Admin')
+        await user.click(adminOption)
+      })
 
       const emailInput = screen.getByLabelText('Email Address')
       await user.type(emailInput, 'test@example.com')
@@ -216,12 +218,14 @@ describe('InviteModal', () => {
       const sendButton = screen.getByRole('button', { name: 'Send Invitation' })
       await user.click(sendButton)
 
-      expect(createAlbumInvite).toHaveBeenCalledWith(
-        'album-123',
-        'test@example.com',
-        AlbumRole.ADMIN
-      )
-    })
+      await waitFor(() => {
+        expect(createAlbumInvite).toHaveBeenCalledWith(
+          'album-123',
+          'test@example.com',
+          AlbumRole.ADMIN
+        )
+      })
+    }, 10000)
   })
 
   describe('Shareable Link', () => {

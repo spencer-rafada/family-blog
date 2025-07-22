@@ -11,7 +11,7 @@ jest.mock('swr')
 jest.mock('@/hooks/useFlags')
 jest.mock('next/link', () => {
   const MockedLink = ({ children, href }: { children: React.ReactNode; href: string }) => {
-    return <a href={href}>{children}</a>
+    return <a href={href} onClick={(e) => e.preventDefault()}>{children}</a>
   }
   MockedLink.displayName = 'Link'
   return MockedLink
