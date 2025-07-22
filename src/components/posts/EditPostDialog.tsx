@@ -50,7 +50,11 @@ interface EditPostDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export default function EditPostDialog({ post, open, onOpenChange }: EditPostDialogProps) {
+export default function EditPostDialog({
+  post,
+  open,
+  onOpenChange,
+}: EditPostDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<PostFormData>({
@@ -74,19 +78,15 @@ export default function EditPostDialog({ post, open, onOpenChange }: EditPostDia
   const onSubmit = async (data: PostFormData) => {
     setIsSubmitting(true)
     try {
-      const result = await updatePost(post.id, {
-        title: data.title || null,
+      await updatePost(post.id, {
+        title: data.title || undefined,
         content: data.content,
-        milestone_type: data.milestone_type,
+        milestone_type: data.milestone_type || undefined,
       })
-
-      if (result.error) {
-        throw new Error(result.error)
-      }
 
       // Revalidate posts
       if (post.album_id) {
-        revalidatePosts(post.album_id)
+        revalidatePosts()
       }
       revalidatePosts()
 
@@ -100,23 +100,23 @@ export default function EditPostDialog({ post, open, onOpenChange }: EditPostDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className='sm:max-w-[525px]'>
         <DialogHeader>
           <DialogTitle>Edit Post</DialogTitle>
           <DialogDescription>
-            Make changes to your post. Click save when you're done.
+            Make changes to your post. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
             <FormField
               control={form.control}
-              name="title"
+              name='title'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Title (optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Add a title..." {...field} />
+                    <Input placeholder='Add a title...' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -124,14 +124,14 @@ export default function EditPostDialog({ post, open, onOpenChange }: EditPostDia
             />
             <FormField
               control={form.control}
-              name="content"
+              name='content'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Write your post..."
-                      className="min-h-[100px]"
+                      placeholder='Write your post...'
+                      className='min-h-[100px]'
                       {...field}
                     />
                   </FormControl>
@@ -141,7 +141,7 @@ export default function EditPostDialog({ post, open, onOpenChange }: EditPostDia
             />
             <FormField
               control={form.control}
-              name="milestone_type"
+              name='milestone_type'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Milestone Type</FormLabel>
@@ -153,16 +153,18 @@ export default function EditPostDialog({ post, open, onOpenChange }: EditPostDia
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a milestone type" />
+                        <SelectValue placeholder='Select a milestone type' />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {Object.entries(MILESTONE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value='none'>None</SelectItem>
+                      {Object.entries(MILESTONE_LABELS).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        )
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -171,15 +173,17 @@ export default function EditPostDialog({ post, open, onOpenChange }: EditPostDia
             />
             <DialogFooter>
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type='submit' disabled={isSubmitting}>
+                {isSubmitting && (
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                )}
                 {isSubmitting ? 'Saving...' : 'Save changes'}
               </Button>
             </DialogFooter>

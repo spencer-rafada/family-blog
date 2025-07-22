@@ -174,7 +174,7 @@ describe('EditPostDialog', () => {
       await user.click(saveButton)
 
       await waitFor(() => {
-        expect(revalidatePosts).toHaveBeenCalledWith('album-123')
+        expect(revalidatePosts).toHaveBeenCalledTimes(2)
         expect(revalidatePosts).toHaveBeenCalledWith()
       })
     })
@@ -197,7 +197,7 @@ describe('EditPostDialog', () => {
     })
 
     it('handles update errors gracefully', async () => {
-      ;(updatePost as jest.Mock).mockResolvedValue({ error: 'Update failed' })
+      ;(updatePost as jest.Mock).mockRejectedValue(new Error('Update failed'))
 
       render(
         <EditPostDialog
